@@ -1,0 +1,140 @@
+# Introdução
+
+Este notebook configura o ambiente de trabalho para a análise bibliométrica.
+Aqui instalamos e carregamos todos os pacotes necessários, verificamos a versão
+do R e definimos configurações de reprodutibilidade.
+
+# Instalação de Pacotes
+
+Primeiro, verificamos se cada pacote necessário está instalado.
+Caso não esteja, o código realiza a instalação automaticamente.
+
+```{r}
+#| label: instalar-pacotes
+
+# Lista de pacotes necessários para o projeto
+pacotes <- c(
+  "bibliometrix",  # Framework principal para análise bibliométrica
+  "tidyverse",     # Coleção de pacotes para manipulação de dados (dplyr, tidyr, ggplot2, etc.)
+  "ggplot2",       # Criação de gráficos elegantes (já incluído no tidyverse, listado para clareza)
+  "igraph",        # Análise e manipulação de redes/grafos
+  "ggraph",        # Visualização de redes usando a gramática do ggplot2
+  "ggrepel",       # Rótulos sem sobreposição em gráficos (dependência do bibliometrix)
+  "knitr",         # Geração de tabelas formatadas e relatórios
+  "here"           # Caminhos de arquivo reprodutíveis (evita problemas com diretório de trabalho)
+)
+
+# Configurar repositório CRAN (necessário para instalação de pacotes)
+if (is.null(getOption("repos")) || getOption("repos")["CRAN"] == "@CRAN@") {
+  options(repos = c(CRAN = "https://cloud.r-project.org"))
+}
+
+# Verificar e instalar pacotes que ainda não estão disponíveis
+pacotes_faltando <- pacotes[!(pacotes %in% installed.packages()[, "Package"])]
+
+if (length(pacotes_faltando) > 0) {
+  message("Instalando pacotes: ", paste(pacotes_faltando, collapse = ", "))
+  install.packages(pacotes_faltando, dependencies = TRUE)
+} else {
+  message("Todos os pacotes já estão instalados.")
+}
+```
+
+# Carregar Pacotes
+
+Agora carregamos todos os pacotes na sessão do R.
+
+```{r}
+#| label: carregar-pacotes
+
+# Carregar cada pacote e exibir confirmação
+library(bibliometrix)
+library(tidyverse)
+library(igraph)
+library(ggraph)
+library(knitr)
+library(here)
+
+message("Todos os pacotes foram carregados com sucesso.")
+```
+
+# Verificação do Ambiente
+
+Verificamos a versão do R e dos pacotes principais para garantir reprodutibilidade.
+
+```{r}
+#| label: verificar-ambiente
+
+# Versão do R
+cat("Versão do R:", R.version.string, "\n\n")
+
+# Versões dos pacotes principais
+pacotes_info <- sapply(pacotes, function(p) as.character(packageVersion(p)))
+cat("Versões dos pacotes:\n")
+for (i in seq_along(pacotes_info)) {
+  cat(sprintf("  %-15s %s\n", names(pacotes_info)[i], pacotes_info[i]))
+}
+```
+
+# Configurações de Reprodutibilidade
+
+```{r}
+#| label: configurar-seed
+
+# Definir seed para reprodutibilidade de resultados que envolvem aleatoriedade
+set.seed(804) # Número do código da matéria
+
+# Configurar opções globais do R
+options(
+  scipen = 999,
+  digits = 4,
+  OutDec = ".",
+  stringsAsFactors = FALSE
+)
+
+message("Seed definida: 804")
+```
+
+# Verificar Estrutura de Pastas
+
+Verificamos se a estrutura de pastas do projeto está correta.
+
+```{r}
+#| label: verificar-pastas
+
+# Pastas esperadas no projeto
+pastas <- c(
+  here("data", "raw"),
+  here("data", "processed"),
+  here("output", "figures"),
+  here("output", "tables")
+)
+
+# Criar pastas caso não existam
+for (pasta in pastas) {
+  if (!dir.exists(pasta)) {
+    dir.create(pasta, recursive = TRUE)
+    message("Pasta criada: ", pasta)
+  } else {
+    message("Pasta OK: ", pasta)
+  }
+}
+```
+
+# Sobre o Pacote `bibliometrix`
+
+O `bibliometrix` é um pacote R desenvolvido por Massimo Aria e Corrado Cuccurullo
+(Universidade de Nápoles Federico II) para análise bibliométrica quantitativa.
+
+**Principais funcionalidades utilizadas neste projeto:**
+
+- `convert2df()` — Importa dados de bases bibliográficas (Scopus, Web of Science)
+- `biblioAnalysis()` — Gera estatísticas descritivas do corpus
+- `biblioNetwork()` — Constrói matrizes de rede (co-citação, coupling, co-ocorrência)
+- `networkPlot()` — Visualiza redes bibliométricas
+- `thematicMap()` — Gera mapas temáticos (análise de co-ocorrência de keywords)
+
+**Referência:**
+Aria, M. & Cuccurullo, C. (2017). bibliometrix: An R-tool for comprehensive
+science mapping analysis. *Journal of Informetrics*, 11(4), 959–975.
+https://doi.org/10.1016/j.joi.2017.08.007

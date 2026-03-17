@@ -1,0 +1,304 @@
+---
+title: "05 — Síntese dos Resultados"
+subtitle: "Bibliometria de Gêmeos Digitais para Cidades Inteligentes"
+author: "[Nome do Autor]"
+date: today
+format:
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    fig-width: 10
+    fig-height: 6
+    documentclass: article
+    geometry: margin=2.5cm
+    fontsize: 11pt
+    colorlinks: true
+execute:
+  warning: false
+  message: false
+---
+
+# Introdução
+
+Este notebook compila os principais resultados de todos os notebooks
+anteriores em um formato que pode ser usado diretamente na escrita
+do manuscrito para a revista Cities. Cada seção corresponde a uma
+parte dos Resultados do artigo.
+
+# Carregar Pacotes e Dados
+
+```{r}
+#| label: setup
+
+library(bibliometrix)
+library(tidyverse)
+library(knitr)
+library(here)
+
+# Carregar dados processados
+df <- readRDS(here("data", "processed", "df_bibliometria.rds"))
+
+# Carregar tabelas geradas anteriormente
+pub_ano <- read_csv(here("output", "tables", "publicacoes_por_ano.csv"))
+top_journals <- read_csv(here("output", "tables", "top_journals.csv"))
+top_citados <- read_csv(here("output", "tables", "top_citados.csv"))
+stats_gerais <- read_csv(here("output", "tables", "estatisticas_gerais.csv"))
+clusters <- read_csv(here("output", "tables", "clusters_mapa_tematico.csv"))
+
+cat("Todos os dados carregados com sucesso.\n")
+```
+
+# Visão Geral do Corpus
+
+Esta tabela resume as características gerais do corpus bibliométrico
+analisado. Deve ser incluída no início da seção de Resultados.
+
+```{r}
+#| label: tabela-geral
+
+# Tabela de visão geral formatada para publicação
+kable(
+  stats_gerais,
+  col.names = c("Metric", "Value"),
+  caption = "Table 1 — General overview of the bibliometric corpus on digital twins for smart cities (Scopus, 2015–2024)"
+)
+```
+
+# Crescimento da Produção Científica
+
+Texto sugerido para o manuscrito (adaptar com dados reais):
+
+> The scientific production on digital twins applied to smart cities
+> showed a [growing/exponential] trend over the study period.
+> From [X] articles in 2015, the field grew to [Y] articles in 2024,
+> representing a [Z]-fold increase. The most significant growth occurred
+> between [year] and [year], coinciding with [contextual explanation].
+
+```{r}
+#| label: crescimento-dados
+
+# Dados de crescimento para o texto
+cat("Dados de crescimento temporal:\n")
+kable(pub_ano, col.names = c("Year", "Articles"))
+
+# Calcular taxa de crescimento
+if (nrow(pub_ano) >= 2) {
+  primeiro_ano <- pub_ano$Artigos[1]
+  ultimo_ano <- pub_ano$Artigos[nrow(pub_ano)]
+  crescimento <- round(ultimo_ano / max(primeiro_ano, 1), 1)
+  cat(sprintf("\nCrescimento total: %dx (de %d para %d artigos)\n",
+              crescimento, primeiro_ano, ultimo_ano))
+}
+```
+
+# Distribuição Geográfica
+
+```{r}
+#| label: geografia
+
+# Análise bibliométrica para extrair dados de países
+resultados <- biblioAnalysis(df)
+
+# Tabela de países para o artigo
+paises <- resultados$Countries %>%
+  as.data.frame() %>%
+  head(10)
+
+names(paises) <- c("Country", "Articles")
+
+kable(
+  paises,
+  caption = "Table 2 — Top 10 countries by scientific production"
+)
+```
+
+# Periódicos Mais Relevantes
+
+```{r}
+#| label: journals
+
+kable(
+  top_journals,
+  col.names = c("Journal", "Articles"),
+  caption = "Table 3 — Top 10 most productive journals"
+)
+```
+
+# Artigos Mais Influentes
+
+```{r}
+#| label: citados
+
+kable(
+  top_citados,
+  caption = "Table 4 — Top 10 most cited articles in the corpus"
+)
+```
+
+# Estrutura Temática do Campo
+
+Esta é a seção mais importante para o argumento do artigo. Deve apresentar
+o mapa temático e interpretar o posicionamento dos clusters.
+
+```{r}
+#| label: temas
+
+# Apresentar os clusters do mapa temático
+kable(
+  clusters %>% select(name, rcentrality, rdensity, words),
+  col.names = c("Cluster", "Centrality", "Density", "Keywords"),
+  digits = 3,
+  caption = "Table 5 — Thematic clusters from the strategic diagram (thematic map)"
+)
+```
+
+# Interpretação do Gap
+
+Seção para conectar os resultados ao argumento principal do artigo.
+
+```{r}
+#| label: gap-analysis
+
+# Verificar presença de termos de decisão/gestão nos clusters
+cat("=== ANÁLISE DO GAP — SUPORTE À DECISÃO NA GESTÃO PÚBLICA ===\n\n")
+
+# Termos a procurar nos clusters
+termos_decisao <- c("decision", "governance", "management", "policy",
+                     "public", "municipal", "administration")
+
+clusters_com_decisao <- clusters %>%
+  filter(str_detect(tolower(words), paste(termos_decisao, collapse = "|")))
+
+if (nrow(clusters_com_decisao) > 0) {
+  cat("Clusters que contêm termos relacionados a decisão/gestão:\n\n")
+  for (i in seq_len(nrow(clusters_com_decisao))) {
+    centralidade <- clusters_com_decisao$rcentrality[i]
+    densidade <- clusters_com_decisao$rdensity[i]
+
+    quadrante <- case_when(
+      centralidade >= 0.5 & densidade >= 0.5 ~ "MOTOR (central + developed)",
+      centralidade < 0.5 & densidade >= 0.5 ~ "NICHE (developed but peripheral)",
+      centralidade >= 0.5 & densidade < 0.5 ~ "BASIC (central but underdeveloped)",
+      TRUE ~ "EMERGING/DECLINING (peripheral + underdeveloped)"
+    )
+
+    cat(sprintf("  '%s' → Quadrante: %s\n", clusters_com_decisao$name[i], quadrante))
+    cat(sprintf("    Centralidade: %.3f | Densidade: %.3f\n",
+                centralidade, densidade))
+    cat(sprintf("    Termos: %s\n\n", clusters_com_decisao$words[i]))
+  }
+} else {
+  cat("NENHUM cluster contém termos relacionados a decisão ou gestão pública.\n")
+  cat("Isso constitui evidência forte do gap identificado.\n\n")
+  cat("Implicação para o artigo: A dimensão de suporte à decisão gerencial\n")
+  cat("pública está AUSENTE da estrutura temática do campo, confirmando que\n")
+  cat("este é um gap significativo na literatura.\n")
+}
+```
+
+# Texto-Base para Sections do Artigo
+
+## Para a seção Discussion
+
+```{r}
+#| label: texto-discussion
+
+cat("
+PONTOS PARA A DISCUSSION (adaptar com dados reais):
+
+1. O campo de gêmeos digitais para cidades inteligentes apresentou
+   crescimento [exponencial/acelerado] entre 2015 e 2024, com [X]
+   artigos publicados no período.
+
+2. A produção é dominada por [países], com forte presença de periódicos
+   de [áreas disciplinares], sugerindo que o campo é primariamente
+   orientado por [tecnologia/engenharia].
+
+3. O mapa temático revela que os temas motores do campo são [temas],
+   enquanto [temas] aparecem como temas básicos ou emergentes.
+
+4. ACHADO CENTRAL: A dimensão de suporte à decisão gerencial pública
+   [está posicionada como tema emergente/periférico / está completamente
+   ausente da estrutura temática]. Isso indica que, apesar do potencial
+   dos gêmeos digitais como ferramentas de apoio à decisão urbana,
+   a literatura ainda não incorporou sistematicamente essa perspectiva.
+
+5. Este gap representa uma oportunidade de pesquisa significativa,
+   especialmente considerando as demandas crescentes de gestores
+   públicos por ferramentas baseadas em evidências para governança urbana.
+")
+```
+
+## Para a seção Conclusions
+
+```{r}
+#| label: texto-conclusions
+
+cat("
+PONTOS PARA AS CONCLUSIONS (adaptar):
+
+CONTRIBUIÇÕES:
+- Mapeamento abrangente de [X] artigos sobre DT × smart cities (2015-2024)
+- Identificação da estrutura temática do campo via mapa temático
+- Evidência do gap de suporte à decisão na gestão pública
+- Agenda de pesquisa para conectar gêmeos digitais à decisão urbana
+
+LIMITAÇÕES:
+- Base única (Scopus) — futuras pesquisas podem incluir Web of Science
+- Apenas artigos em inglês
+- Análise bibliométrica não substitui revisão sistemática qualitativa
+- Período limitado a 2015-2024
+
+AGENDA FUTURA (conexão com tese de doutorado):
+- Revisão sistemática qualitativa dos artigos que abordam decision support
+- Estudo de caso em cidade brasileira
+- Framework conceitual para DT como ferramenta de decisão pública
+")
+```
+
+# Checklist Final do Artigo
+
+```{r}
+#| label: checklist
+
+cat("
+=== CHECKLIST DE RESULTADOS PARA O MANUSCRITO ===
+
+Seção 4 - Results:
+[ ] Tabela 1: Visão geral do corpus (métricas gerais)
+[ ] Figura 1: Evolução temporal de publicações
+[ ] Tabela 2: Top 10 países produtores
+[ ] Figura 2: Gráfico de países
+[ ] Tabela 3: Top 10 periódicos
+[ ] Tabela 4: Top 10 artigos mais citados
+[ ] Figura 3: Rede de co-citação de autores
+[ ] Figura 4: Mapa de colaboração entre países
+[ ] Figura 5: Rede de co-ocorrência de keywords
+[ ] Figura 6: Mapa temático (PRINCIPAL)
+[ ] Tabela 5: Clusters do mapa temático
+[ ] Figura 7: Evolução temática (Sankey diagram)
+
+Seção 5 - Discussion:
+[ ] Interpretação do crescimento do campo
+[ ] Análise dos temas motores vs. periféricos
+[ ] Discussão do gap de decision support
+[ ] Conexão com a pergunta de pesquisa
+
+Requisitos Cities:
+[ ] 7.000-9.000 palavras
+[ ] Abstract estruturado (max 250 palavras)
+[ ] 4-6 keywords
+[ ] 3-5 highlights (max 85 chars cada)
+[ ] Figuras 300 DPI
+[ ] Declaração de conflito de interesses
+[ ] Declaração de uso de IA
+")
+```
+
+```{r}
+#| label: sessao
+
+# Informação da sessão para reprodutibilidade
+sessionInfo()
+```

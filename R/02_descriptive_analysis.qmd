@@ -1,0 +1,322 @@
+---
+title: "02 — Análise Descritiva da Produção Científica"
+subtitle: "Bibliometria de Gêmeos Digitais para Cidades Inteligentes"
+author: "Leonardo Camilo"
+date: today
+format:
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    fig-width: 10
+    fig-height: 6
+    documentclass: article
+    geometry: margin=2.5cm
+    fontsize: 11pt
+    colorlinks: true
+execute:
+  warning: false
+  message: false
+---
+
+# Introdução
+
+Este notebook realiza a análise descritiva da produção científica sobre gêmeos digitais aplicados a cidades inteligentes. As visualizações e tabelas aqui geradas compõem a seção de Resultados do artigo.
+
+Pergunta orientadora: *Como evoluiu a produção científica sobre gêmeos digitais aplicados a cidades inteligentes entre 2015 e 2024?*
+
+# Carregar Pacotes e Dados
+
+```{r}
+#| label: setup
+
+library(bibliometrix)
+library(tidyverse)
+library(knitr)
+library(here)
+
+# Carregar dados processados no notebook anterior
+df <- readRDS(here("data", "processed", "df_bibliometria.rds"))
+
+cat("Dataset carregado:", nrow(df), "artigos\n")
+```
+
+# Evolução Temporal das Publicações
+
+Este gráfico mostra o crescimento anual de publicações no campo. Espera-se um crescimento exponencial nos últimos anos, refletindo o aumento de interesse em gêmeos digitais para cidades inteligentes.
+
+```{r}
+#| label: evolucao-temporal
+#| fig-cap: "Evolução anual de publicações sobre gêmeos digitais e cidades inteligentes (2015–2024)"
+
+# Contar publicações por ano
+pub_ano <- df %>%
+  count(PY, name = "Artigos") %>%
+  filter(!is.na(PY)) %>%
+  arrange(PY)
+
+# Gráfico de linha com pontos
+p_evolucao <- ggplot(pub_ano, aes(x = PY, y = Artigos)) +
+  geom_line(color = "#2C3E50", linewidth = 1) +
+  geom_point(color = "#2C3E50", size = 3) +
+  geom_text(aes(label = Artigos), vjust = -1, size = 3.5) +
+  scale_x_continuous(breaks = seq(min(pub_ano$PY), max(pub_ano$PY), 1)) +
+  labs(
+    title = "Evolução Anual de Publicações",
+    subtitle = "Digital Twins × Smart Cities (Scopus, 2015–2024)",
+    x = "Ano de Publicação",
+    y = "Número de Artigos"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+print(p_evolucao)
+
+# Salvar gráfico em alta resolução (300 DPI para publicação)
+ggsave(
+  here("output", "figures", "01_evolucao_temporal.png"),
+  plot = p_evolucao,
+  width = 10, height = 6, dpi = 300
+)
+
+# Gráfico salvo em: output/figures/01_evolucao_temporal.png
+```
+
+# Top 10 Países Produtores
+
+Identificar os países com maior produção científica ajuda a compreender a geografia da pesquisa em gêmeos digitais urbanos.
+
+```{r}
+#| label: top-paises
+#| fig-cap: "Top 10 países com maior produção científica"
+
+# Extrair país do primeiro autor (campo AU_CO ou C1)
+# O bibliometrix geralmente fornece o campo AU1_CO (país do primeiro autor)
+# ou podemos usar metaTagExtraction para extrair
+
+# Usar a função do bibliometrix para extrair informações de país
+resultados <- biblioAnalysis(df)
+
+# Top 10 países (contagem pelo país do primeiro autor)
+top_paises <- resultados$Countries %>%
+  as.data.frame() %>%
+  head(10)
+
+# Ajustar nomes das colunas
+names(top_paises) <- c("Pais", "Artigos")
+top_paises$Artigos <- as.numeric(top_paises$Artigos)
+
+# Gráfico de barras horizontais
+p_paises <- ggplot(top_paises, aes(x = reorder(Pais, Artigos), y = Artigos)) +
+  geom_col(fill = "#3498DB", width = 0.7) +
+  geom_text(aes(label = Artigos), hjust = -0.2, size = 3.5) +
+  coord_flip() +
+  labs(
+    title = "Top 10 Países Produtores",
+    subtitle = "Digital Twins × Smart Cities (Scopus, 2015–2024)",
+    x = NULL,
+    y = "Número de Artigos"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(plot.title = element_text(face = "bold"))
+
+print(p_paises)
+
+ggsave(
+  here("output", "figures", "02_top_paises.png"),
+  plot = p_paises,
+  width = 10, height = 6, dpi = 300
+)
+
+# Gráfico salvo em: output/figures/02_top_paises.png
+```
+
+# Top 10 Periódicos (Journals)
+
+Quais periódicos mais publicam sobre o tema? Isso revela em quais comunidades acadêmicas o tema está mais presente.
+
+```{r}
+#| label: top-journals
+
+# Contar publicações por periódico
+top_journals <- df %>%
+  count(SO, name = "Artigos", sort = TRUE) %>%
+  head(10)
+
+# Exibir tabela formatada
+kable(
+  top_journals,
+  col.names = c("Periódico", "Artigos"),
+  caption = "Top 10 periódicos com mais publicações sobre gêmeos digitais e cidades inteligentes"
+)
+```
+
+```{r}
+#| label: plot-journals
+#| fig-cap: "Top 10 periódicos mais produtivos"
+
+# Gráfico de barras para journals
+p_journals <- ggplot(top_journals, aes(x = reorder(SO, Artigos), y = Artigos)) +
+  geom_col(fill = "#27AE60", width = 0.7) +
+  geom_text(aes(label = Artigos), hjust = -0.2, size = 3.5) +
+  coord_flip() +
+  labs(
+    title = "Top 10 Periódicos Mais Produtivos",
+    subtitle = "Digital Twins × Smart Cities (Scopus, 2015–2024)",
+    x = NULL,
+    y = "Número de Artigos"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.text.y = element_text(size = 9)
+  )
+
+print(p_journals)
+
+ggsave(
+  here("output", "figures", "03_top_journals.png"),
+  plot = p_journals,
+  width = 12, height = 6, dpi = 300
+)
+```
+
+# Top 10 Autores Mais Prolíficos
+
+```{r}
+#| label: top-autores
+
+# Extrair os autores mais produtivos da análise do bibliometrix
+top_autores <- resultados$Authors %>%
+  as.data.frame() %>%
+  head(10)
+
+names(top_autores) <- c("Autor", "Artigos")
+
+kable(
+  top_autores,
+  caption = "Top 10 autores mais prolíficos"
+)
+```
+
+```{r}
+#| label: plot-autores
+#| fig-cap: "Top 10 autores mais prolíficos"
+
+top_autores$Artigos <- as.numeric(top_autores$Artigos)
+
+p_autores <- ggplot(top_autores, aes(x = reorder(Autor, Artigos), y = Artigos)) +
+  geom_col(fill = "#8E44AD", width = 0.7) +
+  geom_text(aes(label = Artigos), hjust = -0.2, size = 3.5) +
+  coord_flip() +
+  labs(
+    title = "Top 10 Autores Mais Prolíficos",
+    subtitle = "Digital Twins × Smart Cities (Scopus, 2015–2024)",
+    x = NULL,
+    y = "Número de Artigos"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(plot.title = element_text(face = "bold"))
+
+print(p_autores)
+
+ggsave(
+  here("output", "figures", "04_top_autores.png"),
+  plot = p_autores,
+  width = 10, height = 6, dpi = 300
+)
+```
+
+# Top 10 Artigos Mais Citados
+
+Os artigos mais citados representam os trabalhos seminais e mais influentes
+do campo, servindo como referência obrigatória para qualquer revisão.
+
+```{r}
+#| label: top-citados
+
+# Selecionar os 10 artigos com mais citações
+top_citados <- df %>%
+  select(AU, TI, SO, PY, TC) %>%
+  arrange(desc(TC)) %>%
+  head(10) %>%
+  mutate(
+    # Formatar autor para exibição: apenas primeiro autor + "et al."
+    Autor = sapply(strsplit(AU, ";"), function(x) {
+      if (length(x) > 1) paste0(trimws(x[1]), " et al.")
+      else trimws(x[1])
+    }),
+    # Truncar título longo
+    Titulo = ifelse(nchar(TI) > 80, paste0(substr(TI, 1, 77), "..."), TI)
+  ) %>%
+  select(Autor, Titulo, Periodico = SO, Ano = PY, Citacoes = TC)
+
+kable(
+  top_citados,
+  caption = "Top 10 artigos mais citados no corpus"
+)
+```
+
+# Estatísticas Gerais do Corpus
+
+Resumo quantitativo do dataset para inclusão na seção de Resultados do artigo.
+
+```{r}
+#| label: estatisticas-gerais
+
+# Calcular estatísticas descritivas gerais
+stats <- list(
+  "Total de artigos" = nrow(df),
+  "Período" = paste(min(df$PY, na.rm = TRUE), "–", max(df$PY, na.rm = TRUE)),
+  "Periódicos únicos" = n_distinct(df$SO),
+  "Autores únicos" = length(unique(unlist(strsplit(df$AU, ";")))),
+  "Países" = n_distinct(resultados$Countries),
+  "Média de citações por artigo" = round(mean(df$TC, na.rm = TRUE), 1),
+  "Mediana de citações" = median(df$TC, na.rm = TRUE),
+  "Total de citações" = sum(df$TC, na.rm = TRUE)
+)
+
+# Exibir como tabela
+stats_df <- data.frame(
+  Metrica = names(stats),
+  Valor = unlist(stats)
+)
+
+kable(stats_df, col.names = c("Métrica", "Valor"),
+      caption = "Estatísticas gerais do corpus bibliométrico")
+```
+
+# Exportar Tabelas
+
+Salvamos as tabelas em formato CSV para uso no manuscrito.
+
+```{r}
+#| label: exportar-tabelas
+
+# Exportar tabelas para uso no artigo
+write_csv(pub_ano, here("output", "tables", "publicacoes_por_ano.csv"))
+write_csv(top_journals, here("output", "tables", "top_journals.csv"))
+write_csv(top_citados, here("output", "tables", "top_citados.csv"))
+write_csv(stats_df, here("output", "tables", "estatisticas_gerais.csv"))
+
+cat("Tabelas exportadas para: output/tables/\n")
+```
+
+# Resumo da Análise Descritiva
+
+As análises deste notebook revelam:
+
+1. **Crescimento temporal** — O campo de gêmeos digitais para cidades inteligentes
+   apresenta crescimento acelerado, especialmente nos últimos anos.
+2. **Geografia da pesquisa** — Identificamos os países líderes na produção
+   científica deste campo.
+3. **Periódicos-chave** — Os journals que mais publicam sobre o tema indicam
+   em quais comunidades acadêmicas este campo está consolidado.
+4. **Autores influentes** — Os pesquisadores mais produtivos e mais citados
+   representam as vozes dominantes no campo.
+
+> **Próximo passo:** O notebook `03_network_analysis.qmd` explora as redes
+> de colaboração e co-citação, revelando a estrutura intelectual do campo.

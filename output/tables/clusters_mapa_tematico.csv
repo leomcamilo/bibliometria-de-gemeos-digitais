@@ -1,0 +1,51 @@
+groups,words,name_full,n,centrality,density,rcentrality,rdensity,name,color,freq
+1,"digital twin 233
+smart city 72
+urban planning 23
+machine learning 22
+simulation 17
+big data 12
+3d city model 10
+building information modeling (bim) 7
+built environment 7
+industry 4.0 7",digital twin,73,3.101135621608326,46.163430460106916,4,1,digital twin,#E41A1C80,599
+2,"digital twins 109
+smart cities 57
+internet of things 26
+sustainability 16
+iot 15
+bim 13
+building information modeling 7
+lidar 7
+ai 6
+gis 6",digital twins,66,3.4873063828416733,52.81668708507515,5,4,digital twins,#377EB880,405
+3,"artificial intelligence 31
+urban digital twin 14
+geographic information system 7
+remote sensing 5
+standards 5
+traffic simulation 5
+edge computing 4
+living lab 4
+platform 4
+sustainable urban development 4",artificial intelligence,36,1.9013473466969173,50.09205922512374,2,3,artificial intelligence,#4DAF4A80,151
+4,"deep learning 27
+semantic segmentation 9
+city digital twin 7
+digitalization 7
+urban digital twins 7
+point cloud 5
+3d reconstruction 4
+point clouds 4
+3d city models 3
+attention mechanism 3",deep learning,31,0.7664016539016538,47.44296862512425,1,2,deep learning,#984EA380,124
+5,"virtual reality 18
+blockchain 16
+digital twin (dt) 15
+metaverse 15
+internet of things (iot) 12
+security 8
+5g 7
+climate change 7
+artificial intelligence (ai) 6
+augmented reality (ar) 5",virtual reality,42,2.284393139200124,56.35916241496594,3,5,virtual reality,#FF7F0080,200

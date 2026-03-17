@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p data/raw data/processed output/figures output/tables manuscript R)",
+      "Bash(touch data/raw/.gitkeep data/processed/.gitkeep output/figures/.gitkeep output/tables/.gitkeep)",
+      "Bash(Rscript -e 'install.packages\\(\"\"ggrepel\"\", repos = \"\"https://cloud.r-project.org\"\"\\)')",
+      "Bash(Rscript -e 'cat\\(R.version.string\\)')",
+      "Bash(Rscript -e 'install.packages\\(\"\"ggrepel\"\", repos = \"\"https://cloud.r-project.org\"\", type = \"\"source\"\"\\)')",
+      "Bash(Rscript -e 'install.packages\\(\"\"remotes\"\", repos = \"\"https://cloud.r-project.org\"\"\\); remotes::install_version\\(\"\"ggrepel\"\", version = \"\"0.9.6\"\", repos = \"\"https://cloud.r-project.org\"\"\\)')",
+      "Bash(Rscript -e 'library\\(here\\); cat\\(here\\(\\), \"\"\\\\n\"\"\\)')",
+      "Bash(quarto --version)",
+      "Bash(Rscript -e 'tinytex::is_tinytex\\(\\)')",
+      "Bash(quarto render:*)",
+      "Bash(ls -d /Users/leocamilo/bibliometria-de-gemeos-digitais/R/*_files)",
+      "Bash(ls /Users/leocamilo/bibliometria-de-gemeos-digitais/R/*.html)",
+      "Bash(grep -v \"^Please\\\\|^Aria\\\\|^Failure\\\\|^For info\\\\|^Help\\\\|^To start\\\\|^$\\\\|Warning\\\\|^[[:space:]]*$\\\\|bibliometrix\\\\|Journal\\\\|package\\\\|Biblioshiny\\\\|donate\\\\|here\\(\\)\")",
+      "Bash(Rscript -e 'library\\(webshot2\\); cat\\(\"\"\"\"webshot2 OK\\\\n\"\"\"\"\\)')",
+      "Bash(ls -la /Users/leocamilo/bibliometria-de-gemeos-digitais/data/raw/wos*.bib)"
+    ]
+  }
+}

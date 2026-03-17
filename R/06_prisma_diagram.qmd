@@ -1,0 +1,213 @@
+---
+title: "06 — Diagrama PRISMA"
+subtitle: "Bibliometria de Gêmeos Digitais para Cidades Inteligentes"
+author: "Leonardo Camilo"
+date: today
+format:
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    fig-width: 10
+    fig-height: 12
+    documentclass: article
+    geometry: margin=2.5cm
+    fontsize: 11pt
+    colorlinks: true
+execute:
+  warning: false
+  message: false
+---
+
+# Introdução
+
+Este notebook gera o diagrama PRISMA (Preferred Reporting Items for Systematic
+Reviews and Meta-Analyses) que documenta todas as etapas de identificação,
+triagem e inclusão dos artigos no corpus bibliométrico.
+
+O diagrama é obrigatório para publicação na revista Cities e segue as
+diretrizes PRISMA 2020.
+
+# Carregar Pacotes
+
+```{r}
+#| label: setup
+
+# Configurar repositório CRAN
+if (is.null(getOption("repos")) || getOption("repos")["CRAN"] == "@CRAN@") {
+  options(repos = c(CRAN = "https://cloud.r-project.org"))
+}
+
+# Instalar PRISMAstatement se necessário
+if (!require("PRISMAstatement", quietly = TRUE)) {
+  install.packages("PRISMAstatement")
+}
+
+library(PRISMAstatement)
+library(here)
+```
+
+# Números do Fluxo PRISMA
+
+Preencha os números abaixo conforme o processo real de triagem.
+Estes valores devem ser atualizados após cada etapa.
+
+```{r}
+#| label: numeros-prisma
+
+# ============================================================
+# PREENCHER COM OS NÚMEROS REAIS APÓS CADA ETAPA
+# ============================================================
+
+# ETAPA 1: Identificação — registros recuperados das bases
+n_scopus      <- 671    # Artigos recuperados do Scopus
+n_wos         <- 1052   # Artigos recuperados da Web of Science
+n_total_bruto <- n_scopus + n_wos  # Total bruto antes de deduplicação
+
+# ETAPA 2: Deduplicação — registros duplicados entre as bases
+# (atualizar após rodar mergeDbSources() no notebook 01)
+n_duplicatas  <- NA     # TODO: preencher após deduplicação
+n_apos_dedup  <- NA     # TODO: n_total_bruto - n_duplicatas
+
+# ETAPA 3: Triagem por título — artigos excluídos por título
+# (atualizar após triagem no Parsif.al)
+n_excl_titulo <- NA     # TODO: preencher após triagem por título
+n_apos_titulo <- NA     # TODO: n_apos_dedup - n_excl_titulo
+
+# ETAPA 4: Triagem por abstract — artigos excluídos por abstract
+# (atualizar após triagem no Parsif.al)
+n_excl_abstract <- NA   # TODO: preencher após triagem por abstract
+n_incluidos     <- NA   # TODO: n_apos_titulo - n_excl_abstract
+
+# Exibir resumo
+cat("=== FLUXO PRISMA — NÚMEROS ATUAIS ===\n\n")
+cat(sprintf("Identificação:     Scopus (%d) + WoS (%d) = %d\n",
+            n_scopus, n_wos, n_total_bruto))
+cat(sprintf("Duplicatas:        -%s → %s registros únicos\n",
+            ifelse(is.na(n_duplicatas), "???", n_duplicatas),
+            ifelse(is.na(n_apos_dedup), "???", n_apos_dedup)))
+cat(sprintf("Excl. por título:  -%s → %s registros\n",
+            ifelse(is.na(n_excl_titulo), "???", n_excl_titulo),
+            ifelse(is.na(n_apos_titulo), "???", n_apos_titulo)))
+cat(sprintf("Excl. por abstract:-%s → %s registros\n",
+            ifelse(is.na(n_excl_abstract), "???", n_excl_abstract),
+            ifelse(is.na(n_incluidos), "???", n_incluidos)))
+cat(sprintf("\nIncluídos na análise: %s artigos\n",
+            ifelse(is.na(n_incluidos), "???", n_incluidos)))
+```
+
+# Gerar Diagrama PRISMA
+
+O diagrama só será gerado quando todos os números estiverem preenchidos.
+
+```{r}
+#| label: prisma-diagram
+#| fig-cap: "PRISMA 2020 flow diagram for the systematic bibliometric review"
+
+# Verificar se todos os números foram preenchidos
+todos_preenchidos <- !any(is.na(c(
+  n_duplicatas, n_apos_dedup,
+  n_excl_titulo, n_apos_titulo,
+  n_excl_abstract, n_incluidos
+)))
+
+if (todos_preenchidos) {
+
+  # Gerar diagrama PRISMA usando o pacote PRISMAstatement
+  # A função prisma() gera um flowchart no estilo PRISMA 2020
+  prisma(
+    found         = n_total_bruto,
+    found_other   = 0,
+    no_dupes      = n_apos_dedup,
+    screened       = n_apos_dedup,
+    screen_exclusions = n_excl_titulo,
+    full_text     = n_apos_titulo,
+    full_text_exclusions = n_excl_abstract,
+    qualitative   = n_incluidos,
+    quantitative  = n_incluidos,
+    width = 800,
+    height = 800,
+    font_size = 11
+  )
+
+} else {
+  cat("\n=====================================================\n")
+  cat("DIAGRAMA PRISMA AINDA NÃO GERADO\n")
+  cat("=====================================================\n\n")
+  cat("Motivo: Nem todos os números foram preenchidos.\n\n")
+  cat("Etapas pendentes:\n")
+  if (is.na(n_duplicatas))    cat("  [ ] Deduplicação (rodar mergeDbSources no notebook 01)\n")
+  if (is.na(n_excl_titulo))   cat("  [ ] Triagem por título (Parsif.al)\n")
+  if (is.na(n_excl_abstract)) cat("  [ ] Triagem por abstract (Parsif.al)\n")
+  cat("\nApós completar cada etapa, atualize os números no chunk\n")
+  cat("'numeros-prisma' acima e re-renderize este notebook.\n")
+}
+```
+
+# Salvar Diagrama
+
+```{r}
+#| label: salvar-prisma
+
+if (todos_preenchidos) {
+  # Salvar como PNG
+  png(here("output", "figures", "00_prisma_diagram.png"),
+      width = 800, height = 800, res = 150)
+
+  prisma(
+    found         = n_total_bruto,
+    found_other   = 0,
+    no_dupes      = n_apos_dedup,
+    screened       = n_apos_dedup,
+    screen_exclusions = n_excl_titulo,
+    full_text     = n_apos_titulo,
+    full_text_exclusions = n_excl_abstract,
+    qualitative   = n_incluidos,
+    quantitative  = n_incluidos,
+    width = 800,
+    height = 800,
+    font_size = 11
+  )
+
+  dev.off()
+  cat("Diagrama PRISMA salvo em: output/figures/00_prisma_diagram.png\n")
+} else {
+  cat("Diagrama não salvo — números pendentes.\n")
+}
+```
+
+# Critérios de Inclusão e Exclusão
+
+Para referência no manuscrito, os critérios aplicados em cada etapa:
+
+**Critérios de inclusão:**
+
+- Artigos publicados em periódicos revisados por pares
+- Idioma: Inglês
+- Tema: Gêmeos digitais aplicados a contextos urbanos ou de cidades inteligentes
+- Disponível nas bases Scopus e/ou Web of Science
+
+**Critérios de exclusão (triagem por título):**
+
+- Artigos sobre digital twins em contextos não-urbanos (manufatura, saúde, etc.)
+  que mencionam "urban" apenas tangencialmente
+- Artigos exclusivamente sobre smart grids/energy sem componente urbano
+- Artigos sobre gêmeos biológicos (biological twins)
+
+**Critérios de exclusão (triagem por abstract):**
+
+- Artigos que mencionam digital twin apenas como trabalho futuro
+- Artigos sem relação substantiva com planejamento ou gestão urbana
+- Conference papers ou extended abstracts erroneamente classificados como articles
+
+# Notas Metodológicas
+
+- A busca não aplicou filtro temporal; o período resultante (2017–2025) reflete
+  a emergência natural do campo
+- As bases Scopus e WoS foram escolhidas por serem as mais abrangentes para
+  literatura científica em engenharia, tecnologia e gestão urbana
+- A deduplicação é realizada automaticamente pelo `bibliometrix::mergeDbSources()`
+  com base no DOI e título
+- A triagem manual foi realizada na plataforma Parsif.al
+- O Scopus não incluiu referências citadas na exportação; análises de co-citação
+  e coupling bibliográfico utilizam apenas dados da Web of Science

@@ -1,0 +1,355 @@
+---
+title: "04 — Análise de Palavras-chave e Mapa Temático"
+subtitle: "Bibliometria de Gêmeos Digitais para Cidades Inteligentes"
+author: "Leonardo Camilo"
+date: today
+format:
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    fig-width: 10
+    fig-height: 8
+    documentclass: article
+    geometry: margin=2.5cm
+    fontsize: 11pt
+    colorlinks: true
+execute:
+  warning: false
+  message: false
+---
+
+# Introdução
+
+Este é o notebook mais importante do projeto. A análise de palavras-chave e, especialmente, o **mapa temático** são as peças centrais do artigo, pois revelam:
+
+- Quais temas são dominantes no campo de gêmeos digitais para cidades inteligentes
+- Como esses temas se relacionam entre si
+- **Onde "decision support" e "public management" estão posicionados** (ou ausentes)
+
+Essa análise serve para sustentar o argumento do gap teórico identificado na pergunta de pesquisa.
+
+# Carregar Pacotes e Dados
+
+```{r}
+#| label: setup
+
+library(bibliometrix)
+library(tidyverse)
+library(igraph)
+library(ggraph)
+library(here)
+
+# Carregar dados processados
+df <- readRDS(here("data", "processed", "df_bibliometria.rds"))
+cat("Dataset carregado:", nrow(df), "artigos\n")
+```
+
+# Frequência de Palavras-chave
+
+Antes de construir as redes, vamos examinar quais são as palavras-chave mais frequentes no corpus. Isso dá uma visão geral dos temas presentes.
+
+```{r}
+#| label: freq-keywords-autor
+
+# Keywords do autor (campo DE) — escolhidas pelos próprios pesquisadores
+# Estas são mais relevantes que as Keywords Plus (indexadas automaticamente)
+
+# Extrair e contar keywords do autor
+if ("DE" %in% names(df)) {
+  kw_autor <- df$DE %>%
+    na.omit() %>%
+    strsplit(";") %>%
+    unlist() %>%
+    trimws() %>%
+    tolower() %>%
+    table() %>%
+    sort(decreasing = TRUE) %>%
+    as.data.frame()
+
+  names(kw_autor) <- c("Keyword", "Freq")
+
+  # Top 20 keywords do autor
+  knitr::kable(
+    head(kw_autor, 20),
+    caption = "Top 20 palavras-chave do autor (Author Keywords)"
+  )
+}
+```
+
+```{r}
+#| label: plot-keywords
+#| fig-cap: "Top 20 palavras-chave do autor mais frequentes"
+
+# Gráfico de barras das keywords mais frequentes
+p_kw <- ggplot(head(kw_autor, 20), aes(x = reorder(Keyword, Freq), y = Freq)) +
+  geom_col(fill = "#E74C3C", width = 0.7) +
+  geom_text(aes(label = Freq), hjust = -0.2, size = 3.5) +
+  coord_flip() +
+  labs(
+    title = "Top 20 Palavras-chave do Autor",
+    subtitle = "Digital Twins × Smart Cities (Scopus, 2015–2024)",
+    x = NULL,
+    y = "Frequência"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(plot.title = element_text(face = "bold"))
+
+print(p_kw)
+
+ggsave(
+  here("output", "figures", "08_top_keywords.png"),
+  plot = p_kw,
+  width = 10, height = 8, dpi = 300
+)
+```
+
+```{r}
+#| label: verificar-gap
+
+# ANÁLISE CENTRAL: Verificar presença de termos relacionados ao gap
+# Procurar por termos ligados a suporte à decisão e gestão pública
+
+termos_gap <- c(
+  "decision support", "decision making", "decision-making",
+  "public management", "public administration", "urban governance",
+  "governance", "policy", "public policy", "urban management",
+  "municipal", "city management", "urban planning decision"
+)
+
+cat("=== VERIFICAÇÃO DO GAP: Termos de suporte à decisão e gestão pública ===\n\n")
+
+for (termo in termos_gap) {
+  freq <- sum(kw_autor$Keyword == termo)
+  if (freq > 0) {
+    cat(sprintf("  '%s': %d ocorrências\n", termo, kw_autor$Freq[kw_autor$Keyword == termo]))
+  } else {
+    cat(sprintf("  '%s': AUSENTE\n", termo))
+  }
+}
+
+cat("\n--- Esta análise sustenta (ou refuta) o gap identificado na pesquisa ---\n")
+```
+
+# Rede de Co-ocorrência de Palavras-chave
+
+A rede de co-ocorrência conecta palavras-chave que aparecem juntas nos mesmos artigos. Clusters nessa rede representam subcampos temáticos.
+
+```{r}
+#| label: coocorrencia-rede
+
+# Construir a matriz de co-ocorrência de keywords do autor
+rede_kw <- biblioNetwork(df, analysis = "co-occurrences", network = "keywords")
+
+cat("Dimensões da matriz de co-ocorrência:", dim(rede_kw), "\n")
+```
+
+```{r}
+#| label: coocorrencia-plot
+#| fig-cap: "Rede de co-ocorrência de palavras-chave do autor"
+
+# Visualizar a rede de co-ocorrência
+set.seed(2024)
+
+net_kw <- networkPlot(
+  rede_kw,
+  n = 40,                    # Top 40 keywords
+  type = "fruchterman",
+  Title = "Co-ocorrência de Palavras-chave do Autor",
+  size.cex = TRUE,
+  label.cex = TRUE,
+  edgesize = 3,
+  edges.min = 3,
+  community.repulsion = 0.1
+)
+```
+
+```{r}
+#| label: coocorrencia-salvar
+
+# Salvar a rede
+png(here("output", "figures", "09_coocorrencia_keywords.png"),
+    width = 10, height = 8, units = "in", res = 300)
+
+set.seed(2024)
+networkPlot(
+  rede_kw,
+  n = 40,
+  type = "fruchterman",
+  Title = "Co-ocorrência de Palavras-chave do Autor",
+  size.cex = TRUE,
+  label.cex = TRUE,
+  edgesize = 3,
+  edges.min = 3,
+  community.repulsion = 0.1
+)
+
+dev.off()
+cat("Rede salva em: output/figures/09_coocorrencia_keywords.png\n")
+```
+
+# Mapa Temático (Thematic Map)
+
+O **mapa temático** é a análise mais importante deste artigo. Ele posiciona os temas do campo em quatro quadrantes baseados em dois eixos:
+
+- **Centralidade (eixo X):** Quão importante o tema é para o campo como um todo.
+  Alta centralidade = tema central e bem conectado com outros temas.
+- **Densidade (eixo Y):** Quão desenvolvido/maduro o tema está internamente.
+  Alta densidade = tema coeso, com forte estrutura interna.
+
+## Os 4 Quadrantes do Mapa Temático
+
+```
+                    Alta Densidade
+                         |
+    TEMAS NICHO          |      TEMAS MOTORES
+    (bem desenvolvidos   |      (centrais e bem
+    mas periféricos)     |      desenvolvidos)
+                         |
+    ─────────────────────┼─────────────────────
+                         |
+    TEMAS EMERGENTES     |      TEMAS BÁSICOS
+    OU EM DECLÍNIO       |      (centrais mas ainda
+    (periféricos e       |      pouco desenvolvidos)
+    pouco desenvolvidos) |
+                         |
+                    Baixa Densidade
+    Baixa Centralidade ──────── Alta Centralidade
+```
+
+**Interpretação para o artigo:**
+
+- Se "decision support" / "governance" estiver no quadrante **emergente/declínio**:
+  O tema existe mas é periférico e pouco desenvolvido → confirma o gap
+- Se estiver **ausente** do mapa: O tema nem sequer é reconhecido como cluster relevante → gap ainda mais forte
+- Se estiver como **tema básico**: É reconhecido como importante mas pouco desenvolvido → oportunidade de pesquisa clara
+
+```{r}
+#| label: mapa-tematico
+#| fig-cap: "Mapa temático — posicionamento dos temas do campo em quatro quadrantes"
+
+# Gerar o mapa temático usando keywords do autor
+# field = "DE" usa as Author Keywords
+# n = número mínimo de ocorrências para incluir a keyword
+# minfreq = frequência mínima para incluir no mapa
+mapa <- thematicMap(
+  df,
+  field = "DE",         # Author Keywords
+  n = 250,              # Número de termos a considerar
+  minfreq = 3,          # Frequência mínima para inclusão
+  stemming = FALSE,     # Não aplicar stemming (manter termos originais)
+  size = 0.5,           # Tamanho dos rótulos
+  repel = TRUE          # Evitar sobreposição de rótulos
+)
+
+# O objeto retornado contém o plot e os dados dos clusters
+print(mapa$map)
+```
+
+```{r}
+#| label: mapa-salvar
+
+# Salvar o mapa temático em alta resolução
+ggsave(
+  here("output", "figures", "10_mapa_tematico.png"),
+  plot = mapa$map,
+  width = 12, height = 10, dpi = 300
+)
+
+cat("Mapa temático salvo em: output/figures/10_mapa_tematico.png\n")
+```
+
+## Detalhamento dos Clusters do Mapa Temático
+
+Vamos examinar a composição de cada cluster para identificar onde os temas de interesse (decision support, governance) se posicionam.
+
+```{r}
+#| label: clusters-mapa
+
+# Extrair informações dos clusters
+clusters_info <- mapa$clusters
+
+cat("=== CLUSTERS DO MAPA TEMÁTICO ===\n\n")
+
+# Iterar sobre cada cluster e mostrar seus termos
+for (i in seq_len(nrow(clusters_info))) {
+  # Determinar o quadrante baseado na centralidade e densidade
+  centralidade <- clusters_info$rcentrality[i]
+  densidade <- clusters_info$rdensity[i]
+
+  quadrante <- case_when(
+    centralidade >= 0.5 & densidade >= 0.5 ~ "MOTOR",
+    centralidade < 0.5 & densidade >= 0.5 ~ "NICHO",
+    centralidade >= 0.5 & densidade < 0.5 ~ "BÁSICO",
+    TRUE ~ "EMERGENTE/DECLÍNIO"
+  )
+
+  cat(sprintf("Cluster '%s' [%s]\n", clusters_info$name[i], quadrante))
+  cat(sprintf("  Centralidade: %.3f | Densidade: %.3f\n",
+              centralidade, densidade))
+  cat(sprintf("  Palavras: %s\n\n", clusters_info$words[i]))
+}
+```
+
+```{r}
+#| label: exportar-clusters
+
+# Exportar dados dos clusters para análise detalhada
+write_csv(clusters_info, here("output", "tables", "clusters_mapa_tematico.csv"))
+cat("Dados dos clusters exportados para: output/tables/clusters_mapa_tematico.csv\n")
+```
+
+# Evolução Temática (Thematic Evolution)
+
+Análise de como os temas evoluíram ao longo do tempo, dividindo o período em subperíodos para observar mudanças.
+
+```{r}
+#| label: evolucao-tematica
+#| fig-cap: "Evolução temática ao longo do período de estudo"
+
+# Dividir o período em fatias temporais para análise de evolução
+# Sugestão: 2015-2019 (fase inicial) e 2020-2024 (fase de crescimento)
+evolucao <- thematicEvolution(
+  df,
+  field = "DE",
+  years = c(2019),       # Ponto de corte entre os períodos
+  n = 100,               # Número de termos por período
+  minFreq = 3            # Frequência mínima
+)
+
+# Plotar o Sankey diagram da evolução temática
+plotThematicEvolution(evolucao$Nodes, evolucao$Edges)
+```
+
+```{r}
+#| label: evolucao-salvar
+
+# Salvar a evolução temática
+png(here("output", "figures", "11_evolucao_tematica.png"),
+    width = 14, height = 8, units = "in", res = 300)
+
+plotThematicEvolution(evolucao$Nodes, evolucao$Edges)
+
+dev.off()
+cat("Evolução temática salva em: output/figures/11_evolucao_tematica.png\n")
+```
+
+# Resumo da Análise de Keywords
+
+As análises deste notebook revelam:
+
+1. **Keywords dominantes:** Os termos mais frequentes indicam os focos principais da pesquisa (provavelmente IoT, BIM, simulation, etc.)
+
+2. **Clusters temáticos:** A rede de co-ocorrência mostra como os temas se agrupam, revelando subcampos distintos
+
+3. **Mapa temático:** Posiciona cada tema em relação à sua centralidade e maturidade no campo. **Esta é a evidência principal do artigo.**
+
+4. **Gap identificado:** A posição (ou ausência) de termos como "decision support" e "public management" no mapa temático sustenta a principal contribuição do artigo.
+
+> **Para o artigo:** O mapa temático deve ser discutido extensivamente
+> na seção de Discussion, conectando a posição dos temas ao argumento
+> de que a dimensão de suporte à decisão gerencial pública é um gap
+> significativo na literatura.
+
+> **Próximo passo:** O notebook `05_results_summary.qmd` compila
+> todos os resultados em um formato adequado para o manuscrito.

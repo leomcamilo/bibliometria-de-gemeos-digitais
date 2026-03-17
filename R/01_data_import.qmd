@@ -1,0 +1,263 @@
+---
+title: "01 — Importação e Limpeza dos Dados"
+subtitle: "Bibliometria de Gêmeos Digitais para Cidades Inteligentes"
+author: "Leonardo Camilo"
+date: today
+format:
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    fig-width: 10
+    fig-height: 6
+    documentclass: article
+    geometry: margin=2.5cm
+    fontsize: 11pt
+    colorlinks: true
+execute:
+  warning: false
+  message: false
+---
+
+# Introdução
+
+Este notebook importa os dados bibliográficos exportados do Scopus e realiza a limpeza inicial do dataset. O resultado é um dataframe padronizado pronto para as análises bibliométricas dos notebooks seguintes.
+
+# Carregar Pacotes
+
+```{r}
+#| label: pacotes
+
+library(bibliometrix)
+library(tidyverse)
+library(here)
+```
+
+<!-- Instruções de Coleta no Scopus
+
+PASSO A PASSO PARA EXPORTAR DADOS DO SCOPUS:
+
+1. Acesse https://www.scopus.com/ (necessário acesso institucional)
+
+2. Na barra de busca, selecione "Advanced Search" e insira a string:
+  TITLE-ABS-KEY("digital twin*" AND ("smart cit*" OR "urban*"))
+
+3. Aplique os filtros:
+  - Year: 2015 to 2024
+  - Document Type: Article
+  - Language: English
+
+4. Selecione TODOS os resultados (marcar "All")
+
+5. Clique em "Export" e escolha:
+  - Formato: BibTeX (.bib)
+  - Informações: ALL (todos os campos disponíveis)
+  - Inclua: Citation information, Bibliographical information,
+    Abstract & keywords, Funding details, Other information
+
+NOTA: O Scopus limita a exportação a 2.000 registros por vez.
+Se houver mais resultados, exporte em lotes e combine os arquivos.
+-->
+
+# String de Busca
+
+A string de busca utilizada neste estudo:
+
+```
+TITLE-ABS-KEY("digital twin*" AND ("smart cit*" OR "urban*"))
+```
+
+**Filtros aplicados:**
+
+- Período: 2015–2024
+- Tipo de documento: Article
+- Idioma: English
+
+O operador `*` (truncamento) garante que variações como "digital twin" e "digital twins" sejam capturadas, assim como "smart city" e "smart cities", "urban" e "urbanization", etc.
+
+# Importar Dados
+
+O `bibliometrix` possui a função `convert2df()` que converte arquivos bibliográficos de diversas fontes em um dataframe padronizado.
+
+```{r}
+#| label: importar-dados
+
+# Caminho para o arquivo exportado do Scopus
+# NOTA: Ajuste o nome do arquivo conforme o que foi salvo na pasta data/raw/
+arquivo_bib <- here("data", "raw", "scopus.bib")
+
+# Verificar se o arquivo existe
+if (!file.exists(arquivo_bib)) {
+  stop(
+    "Arquivo não encontrado: ", arquivo_bib, "\n",
+    "Por favor, exporte os dados do Scopus e salve em data/raw/scopus.bib\n",
+    "Consulte as instruções no início deste notebook."
+  )
+}
+
+# Converter o arquivo BibTeX para um dataframe do bibliometrix
+# dbsource = "scopus" indica a base de origem
+# format = "bibtex" indica o formato do arquivo
+df <- convert2df(file = arquivo_bib, dbsource = "scopus", format = "bibtex")
+
+# Dimensões do dataset: quantos artigos e quantas variáveis
+cat("Número de artigos:", nrow(df), "\n")
+cat("Número de variáveis:", ncol(df), "\n")
+```
+
+# Exploração Inicial
+
+Explorando a estrutura do dataset para entender os campos disponíveis.
+
+```{r}
+#| label: estrutura-dados
+
+# Visualizar os primeiros registros
+glimpse(df)
+```
+
+```{r}
+#| label: campos-principais
+
+# Campos mais relevantes para a análise bibliométrica:
+# AU = Autores
+# TI = Título
+# SO = Periódico (Source)
+# DT = Tipo de documento
+# DE = Keywords do autor
+# ID = Keywords Plus (indexadas)
+# AB = Abstract
+# TC = Total de citações
+# PY = Ano de publicação
+# AU_CO = País do primeiro autor
+
+# Verificar campos disponíveis
+cat("Campos disponíveis no dataset:\n")
+cat(paste(names(df), collapse = ", "), "\n")
+```
+
+# Limpeza dos Dados
+
+## Remover Duplicatas
+
+```{r}
+#| label: remover-duplicatas
+
+# Verificar duplicatas baseado no DOI (Digital Object Identifier)
+n_antes <- nrow(df)
+
+# Identificar duplicatas pelo título (mais robusto que DOI, que pode estar ausente)
+df <- df %>%
+  distinct(TI, .keep_all = TRUE)
+
+n_depois <- nrow(df)
+n_removidos <- n_antes - n_depois
+
+cat("Artigos antes da remoção de duplicatas:", n_antes, "\n")
+cat("Artigos após remoção de duplicatas:", n_depois, "\n")
+cat("Duplicatas removidas:", n_removidos, "\n")
+```
+
+## Verificar Valores Ausentes
+
+```{r}
+#| label: verificar-nas
+
+# Verificar proporção de NAs nos campos mais importantes
+campos_chave <- c("AU", "TI", "SO", "PY", "TC", "DE", "ID", "AB")
+
+# Calcular NAs para cada campo
+na_info <- sapply(campos_chave, function(campo) {
+  if (campo %in% names(df)) {
+    sum(is.na(df[[campo]]) | df[[campo]] == "")
+  } else {
+    NA
+  }
+})
+
+# Exibir resultado
+na_tabela <- data.frame(
+  Campo = campos_chave,
+  Descricao = c("Autores", "Título", "Periódico", "Ano",
+                 "Citações", "Keywords Autor", "Keywords Plus", "Abstract"),
+  NAs = na_info,
+  Percentual = round(na_info / nrow(df) * 100, 1)
+)
+
+knitr::kable(na_tabela, caption = "Valores ausentes nos campos principais")
+```
+
+## Verificar Período
+
+```{r}
+#| label: verificar-periodo
+
+# Confirmar que todos os artigos estão no período desejado (2015–2024)
+cat("Período dos dados:\n")
+cat("  Ano mínimo:", min(df$PY, na.rm = TRUE), "\n")
+cat("  Ano máximo:", max(df$PY, na.rm = TRUE), "\n")
+
+# Tabela de frequência por ano
+table(df$PY) %>%
+  as.data.frame() %>%
+  setNames(c("Ano", "Artigos")) %>%
+  knitr::kable(caption = "Distribuição de artigos por ano")
+```
+
+# Análise Bibliométrica Geral
+
+O `bibliometrix` oferece a função `biblioAnalysis()` que gera um resumo completo das principais estatísticas do corpus.
+
+**Glossário das métricas do `summary(biblioAnalysis())`:**
+
+- **TC** — *Total Citations*: número total de citações recebidas pelo artigo
+- **NTC** — *Normalized Total Citations*: citações normalizadas pelo ano de publicação (permite comparar artigos de anos diferentes)
+- **TCperYear** — *Total Citations per Year*: média de citações por ano desde a publicação
+- **SCP** — *Single Country Publications*: artigos em que todos os autores são do mesmo país (sem colaboração internacional)
+- **MCP** — *Multiple Country Publications*: artigos com autores de dois ou mais países (colaboração internacional)
+- **MCP_Ratio** — Proporção de MCP sobre o total de publicações do país. Valores próximos de 1 indicam que quase toda a produção do país é feita em colaboração internacional; valores próximos de 0 indicam produção predominantemente doméstica
+
+```{r}
+#| label: biblio-analysis
+
+# Gerar análise bibliométrica geral
+resultados <- biblioAnalysis(df)
+
+# Exibir resumo das principais métricas
+summary(resultados, k = 10)
+```
+
+```{r}
+#| label: plot-resultados
+
+# Gráficos automáticos do bibliometrix
+# Estes gráficos dão uma visão geral rápida do corpus
+plot(resultados, k = 10)
+```
+
+# Exportar Dados Processados
+
+Salvamos o dataframe limpo para uso nos notebooks seguintes.
+
+```{r}
+#| label: exportar-dados
+
+# Extrair metadados adicionais que não vêm prontos na importação
+# AU_CO = país de cada autor (extraído do campo de afiliação C1)
+# Necessário para análises de colaboração internacional no notebook 03
+df <- metaTagExtraction(df, Field = "AU_CO", sep = ";")
+cat("Campo AU_CO extraído:", sum(!is.na(df$AU_CO) & df$AU_CO != ""), "registros com país\n")
+
+# Salvar o dataframe processado em formato RDS (formato nativo do R, preserva tipos)
+saveRDS(df, here("data", "processed", "df_bibliometria.rds"))
+
+cat("Dados processados salvos em: data/processed/df_bibliometria.rds\n")
+cat("Total de artigos no dataset final:", nrow(df), "\n")
+```
+
+# Resumo
+
+- **Artigos importados:** `r n_antes` (antes da limpeza)
+- **Artigos no dataset final:** `r nrow(df)` (após remoção de duplicatas)
+- **Período coberto:** `r min(df$PY, na.rm = TRUE)` a `r max(df$PY, na.rm = TRUE)`
+- **Dados salvos em:** `data/processed/df_bibliometria.rds`

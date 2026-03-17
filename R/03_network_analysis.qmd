@@ -1,0 +1,309 @@
+---
+title: "03 — Análise de Redes de Colaboração"
+subtitle: "Bibliometria de Gêmeos Digitais para Cidades Inteligentes"
+author: "Leonardo Camilo"
+date: today
+format:
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    fig-width: 10
+    fig-height: 8
+    documentclass: article
+    geometry: margin=2.5cm
+    fontsize: 11pt
+    colorlinks: true
+execute:
+  warning: false
+  message: false
+---
+
+# Introdução
+
+Este notebook constrói e analisa as redes bibliométricas do corpus.
+As redes revelam a **estrutura social** do campo — quem colabora com quem
+e como os países se conectam por meio de co-autorias.
+
+**Nota importante:** Os dados exportados do Scopus não incluíram as referências
+citadas (campo CR), o que impede a construção de redes de **co-citação** e
+**acoplamento bibliográfico (bibliographic coupling)**. Para incluir essas
+análises no futuro, é necessário re-exportar os dados do Scopus marcando a
+opção "Include references" na exportação BibTeX.
+
+Tipos de rede disponíveis com os dados atuais:
+
+- **Colaboração entre autores:** Rede de co-autoria, revelando grupos de pesquisa
+- **Colaboração entre países:** Padrões de cooperação internacional
+- **Co-ocorrência de keywords:** Rede temática (detalhada no notebook 04)
+
+# Carregar Pacotes e Dados
+
+```{r}
+#| label: setup
+
+library(bibliometrix)
+library(tidyverse)
+library(igraph)
+library(ggraph)
+library(here)
+
+# Carregar dados processados
+df <- readRDS(here("data", "processed", "df_bibliometria.rds"))
+cat("Dataset carregado:", nrow(df), "artigos\n")
+
+# Verificar disponibilidade do campo de referências citadas
+cr_disponivel <- any(!is.na(df$CR) & df$CR != "" & df$CR != "none")
+cat("Referências citadas (CR) disponíveis:", cr_disponivel, "\n")
+if (!cr_disponivel) {
+  cat("AVISO: Sem referências citadas. Co-citação e coupling não serão realizados.\n")
+  cat("Para habilitar, re-exporte do Scopus com 'Include references'.\n")
+}
+```
+
+# Rede de Colaboração entre Autores
+
+A rede de co-autoria conecta pesquisadores que publicaram juntos.
+Clusters nessa rede representam grupos de pesquisa que trabalham
+de forma recorrente sobre gêmeos digitais e cidades inteligentes.
+
+```{r}
+#| label: coautoria-rede
+
+# Construir a matriz de colaboração entre autores
+# analysis = "collaboration" analisa a co-autoria
+# network = "authors" foca nos autores dos artigos do corpus
+rede_autores <- biblioNetwork(df, analysis = "collaboration", network = "authors")
+
+cat("Dimensões da matriz de co-autoria:", dim(rede_autores), "\n")
+```
+
+```{r}
+#| label: coautoria-plot
+#| fig-cap: "Rede de co-autoria entre pesquisadores — clusters representam grupos de pesquisa"
+
+# Visualizar a rede de co-autoria
+# n = número de nós a exibir (os mais conectados)
+set.seed(804)
+
+net_autores <- networkPlot(
+  rede_autores,
+  n = 30,                    # Top 30 autores mais conectados
+  type = "fruchterman",      # Algoritmo de layout Fruchterman-Reingold
+  Title = "Rede de Co-autoria entre Pesquisadores",
+  size.cex = TRUE,           # Tamanho proporcional ao nº de colaborações
+  label.cex = TRUE,          # Tamanho do rótulo proporcional
+  edgesize = 3,              # Espessura das arestas
+  edges.min = 2,             # Mínimo de colaborações para exibir aresta
+  community.repulsion = 0.1  # Separação entre clusters
+)
+```
+
+```{r}
+#| label: coautoria-salvar
+
+# Salvar a rede de co-autoria como imagem
+png(here("output", "figures", "05_rede_coautoria.png"),
+    width = 10, height = 8, units = "in", res = 300)
+
+set.seed(804)
+networkPlot(
+  rede_autores,
+  n = 30,
+  type = "fruchterman",
+  Title = "Rede de Co-autoria entre Pesquisadores",
+  size.cex = TRUE,
+  label.cex = TRUE,
+  edgesize = 3,
+  edges.min = 2,
+  community.repulsion = 0.1
+)
+
+dev.off()
+cat("Rede de co-autoria salva em: output/figures/05_rede_coautoria.png\n")
+```
+
+# Mapa de Colaboração entre Países
+
+A rede de colaboração mostra quais países trabalham juntos em pesquisas
+sobre gêmeos digitais e cidades inteligentes. Isso revela os eixos de
+cooperação científica dominantes no campo.
+
+```{r}
+#| label: colaboracao-paises
+
+# Construir a matriz de colaboração entre países
+# analysis = "collaboration" analisa a co-autoria
+# network = "countries" agrupa por país
+rede_paises <- biblioNetwork(df, analysis = "collaboration", network = "countries")
+
+cat("Dimensões da matriz de colaboração:", dim(rede_paises), "\n")
+```
+
+```{r}
+#| label: colaboracao-plot
+#| fig-cap: "Rede de colaboração internacional entre países"
+
+# Visualizar a rede de colaboração entre países
+set.seed(804)
+
+net_paises <- networkPlot(
+  rede_paises,
+  n = 20,                   # Top 20 países
+  type = "fruchterman",
+  Title = "Colaboração Internacional entre Países",
+  size.cex = TRUE,
+  label.cex = TRUE,
+  edgesize = 5,
+  edges.min = 2,
+  community.repulsion = 0.1
+)
+```
+
+```{r}
+#| label: colaboracao-salvar
+
+# Salvar a rede de colaboração
+png(here("output", "figures", "06_colaboracao_paises.png"),
+    width = 10, height = 8, units = "in", res = 300)
+
+set.seed(804)
+networkPlot(
+  rede_paises,
+  n = 20,
+  type = "fruchterman",
+  Title = "Colaboração Internacional entre Países",
+  size.cex = TRUE,
+  label.cex = TRUE,
+  edgesize = 5,
+  edges.min = 2,
+  community.repulsion = 0.1
+)
+
+dev.off()
+cat("Rede de colaboração salva em: output/figures/06_colaboracao_paises.png\n")
+```
+
+# Co-citação e Coupling (condicional)
+
+As análises de co-citação e acoplamento bibliográfico dependem do campo
+de referências citadas (CR). Este bloco só executa se o campo estiver disponível.
+
+```{r}
+#| label: cocitacao-condicional
+
+if (cr_disponivel) {
+  # --- CO-CITAÇÃO DE AUTORES ---
+  rede_cocit <- biblioNetwork(df, analysis = "co-citation", network = "authors")
+  cat("Dimensões da matriz de co-citação:", dim(rede_cocit), "\n")
+
+  set.seed(804)
+  net_cocit <- networkPlot(
+    rede_cocit,
+    n = 30,
+    type = "fruchterman",
+    Title = "Rede de Co-citação de Autores",
+    size.cex = TRUE,
+    label.cex = TRUE,
+    edgesize = 3,
+    edges.min = 3,
+    community.repulsion = 0.1
+  )
+
+  # Salvar
+  png(here("output", "figures", "07_rede_cocitacao.png"),
+      width = 10, height = 8, units = "in", res = 300)
+  set.seed(804)
+  networkPlot(rede_cocit, n = 30, type = "fruchterman",
+              Title = "Rede de Co-citação de Autores",
+              size.cex = TRUE, label.cex = TRUE,
+              edgesize = 3, edges.min = 3, community.repulsion = 0.1)
+  dev.off()
+
+  # --- COUPLING BIBLIOGRÁFICO ---
+  rede_coupling <- biblioNetwork(df, analysis = "coupling", network = "authors")
+  cat("Dimensões da matriz de coupling:", dim(rede_coupling), "\n")
+
+  set.seed(804)
+  net_coupling <- networkPlot(
+    rede_coupling,
+    n = 30,
+    type = "fruchterman",
+    Title = "Acoplamento Bibliográfico entre Autores",
+    size.cex = TRUE,
+    label.cex = TRUE,
+    edgesize = 3,
+    edges.min = 5,
+    community.repulsion = 0.1
+  )
+
+  # Salvar
+  png(here("output", "figures", "08_coupling_autores.png"),
+      width = 10, height = 8, units = "in", res = 300)
+  set.seed(804)
+  networkPlot(rede_coupling, n = 30, type = "fruchterman",
+              Title = "Acoplamento Bibliográfico entre Autores",
+              size.cex = TRUE, label.cex = TRUE,
+              edgesize = 3, edges.min = 5, community.repulsion = 0.1)
+  dev.off()
+
+} else {
+  cat("\n============================================================\n")
+  cat("ANÁLISES NÃO REALIZADAS: Co-citação e Coupling Bibliográfico\n")
+  cat("============================================================\n\n")
+  cat("Motivo: O campo de referências citadas (CR) não está disponível\n")
+  cat("nos dados exportados do Scopus.\n\n")
+  cat("Para habilitar estas análises:\n")
+  cat("1. Acesse o Scopus e refaça a busca\n")
+  cat("2. Ao exportar, marque 'Include references' / 'Cited references'\n")
+  cat("3. Salve novamente em data/raw/scopus.bib\n")
+  cat("4. Re-execute os notebooks 01 e 03\n\n")
+  cat("Análises afetadas:\n")
+  cat("  - Co-citação de autores (estrutura intelectual do campo)\n")
+  cat("  - Acoplamento bibliográfico (frentes de pesquisa ativas)\n")
+}
+```
+
+# Análise dos Clusters de Colaboração
+
+Vamos examinar os clusters identificados na rede de co-autoria para
+entender os subgrupos de pesquisa do campo.
+
+```{r}
+#| label: clusters-coautoria
+
+# Extrair informações dos clusters da rede de co-autoria
+if (!is.null(net_autores$cluster_res)) {
+  cat("Clusters identificados na rede de co-autoria:\n\n")
+
+  clusters <- net_autores$cluster_res
+  for (i in seq_along(unique(clusters$cluster))) {
+    membros <- clusters %>% filter(cluster == i)
+    cat(paste0("Cluster ", i, " (", nrow(membros), " autores): "),
+        paste(head(membros$vertex, 5), collapse = ", "), "\n")
+  }
+}
+```
+
+# Resumo das Redes
+
+As análises de rede revelam:
+
+1. **Co-autoria:** Os clusters de co-autoria mostram os grupos de pesquisa
+   ativos no campo, indicando quais pesquisadores trabalham juntos de forma
+   recorrente.
+
+2. **Colaboração internacional:** A rede de países evidencia os eixos de
+   cooperação científica dominantes (ex: China-UK, China-USA, Europa).
+
+> **Nota para o artigo:** Observar se os clusters de colaboração incluem
+> pesquisadores ou instituições ligados a gestão pública ou suporte à decisão.
+> A concentração em engenharia e computação reforça o gap identificado.
+
+> **Sobre os dados:** Para uma análise mais completa da estrutura intelectual
+> do campo (co-citação e coupling), é necessário re-exportar os dados do Scopus
+> com referências citadas incluídas.
+
+> **Próximo passo:** O notebook `04_keyword_analysis.qmd` aprofunda a
+> análise temática através das palavras-chave, incluindo o mapa temático
+> que é a peça central do artigo.

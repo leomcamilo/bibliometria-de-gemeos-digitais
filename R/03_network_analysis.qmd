@@ -21,15 +21,9 @@ execute:
 
 # Introdução
 
-Este notebook constrói e analisa as redes bibliométricas do corpus.
-As redes revelam a **estrutura social** do campo — quem colabora com quem
-e como os países se conectam por meio de co-autorias.
+Este notebook constrói e analisa as redes bibliométricas do corpus. As redes revelam a **estrutura social** do campo — quem colabora com quem e como os países se conectam por meio de co-autorias.
 
-**Nota importante:** Os dados exportados do Scopus não incluíram as referências
-citadas (campo CR), o que impede a construção de redes de **co-citação** e
-**acoplamento bibliográfico (bibliographic coupling)**. Para incluir essas
-análises no futuro, é necessário re-exportar os dados do Scopus marcando a
-opção "Include references" na exportação BibTeX.
+**Nota importante:** Os dados exportados do Scopus não incluíram as referências citadas (campo CR), o que impede a  construção de redes de **co-citação** e **acoplamento bibliográfico (bibliographic coupling)**. Para incluir essas análises no futuro, é necessário re-exportar os dados do Scopus marcando a opção "Include references" na exportação BibTeX.
 
 Tipos de rede disponíveis com os dados atuais:
 
@@ -52,7 +46,7 @@ library(here)
 df <- readRDS(here("data", "processed", "df_bibliometria.rds"))
 cat("Dataset carregado:", nrow(df), "artigos\n")
 
-# Verificar disponibilidade do campo de referências citadas
+# Verificar disponibilidade do campo de referências citadas - inclusao com o CLAUDE
 cr_disponivel <- any(!is.na(df$CR) & df$CR != "" & df$CR != "none")
 cat("Referências citadas (CR) disponíveis:", cr_disponivel, "\n")
 if (!cr_disponivel) {
@@ -63,9 +57,7 @@ if (!cr_disponivel) {
 
 # Rede de Colaboração entre Autores
 
-A rede de co-autoria conecta pesquisadores que publicaram juntos.
-Clusters nessa rede representam grupos de pesquisa que trabalham
-de forma recorrente sobre gêmeos digitais e cidades inteligentes.
+A rede de co-autoria conecta pesquisadores que publicaram juntos. Clusters nessa rede representam grupos de pesquisa que trabalham de forma recorrente sobre gêmeos digitais e cidades inteligentes.
 
 ```{r}
 #| label: coautoria-rede
@@ -75,7 +67,7 @@ de forma recorrente sobre gêmeos digitais e cidades inteligentes.
 # network = "authors" foca nos autores dos artigos do corpus
 rede_autores <- biblioNetwork(df, analysis = "collaboration", network = "authors")
 
-cat("Dimensões da matriz de co-autoria:", dim(rede_autores), "\n")
+cat("Dimensões da matriz de co-autoria:", dim(rede_autores), "\n") # inclusao com o CLAUDE
 ```
 
 ```{r}
@@ -85,11 +77,11 @@ cat("Dimensões da matriz de co-autoria:", dim(rede_autores), "\n")
 # Visualizar a rede de co-autoria
 # n = número de nós a exibir (os mais conectados)
 set.seed(804)
-
+# Auxílio do CLAUDE, nao conhecia todos os argumentos de networkPlot
 net_autores <- networkPlot(
   rede_autores,
   n = 30,                    # Top 30 autores mais conectados
-  type = "fruchterman",      # Algoritmo de layout Fruchterman-Reingold
+  type = "fruchterman",      # Algoritmo de layout Fruchterman-Reingold (padrao)
   Title = "Rede de Co-autoria entre Pesquisadores",
   size.cex = TRUE,           # Tamanho proporcional ao nº de colaborações
   label.cex = TRUE,          # Tamanho do rótulo proporcional
@@ -105,7 +97,7 @@ net_autores <- networkPlot(
 # Salvar a rede de co-autoria como imagem
 png(here("output", "figures", "05_rede_coautoria.png"),
     width = 10, height = 8, units = "in", res = 300)
-
+# Auxílio do CLAUDE, nao conhecia todos os argumentos de networkPlot
 set.seed(804)
 networkPlot(
   rede_autores,
@@ -149,12 +141,12 @@ set.seed(804)
 
 net_paises <- networkPlot(
   rede_paises,
-  n = 20,                   # Top 20 países
+  n = 20,          # Top 20 países - Com 20 iterações, o algoritmo converge para uma disposição visual estável
   type = "fruchterman",
   Title = "Colaboração Internacional entre Países",
   size.cex = TRUE,
   label.cex = TRUE,
-  edgesize = 5,
+  edgesize = 5,    # 5 como limite superior para manter clareza visual e evitar que conexões sobrecarreguem o gráfico
   edges.min = 2,
   community.repulsion = 0.1
 )
@@ -205,7 +197,7 @@ if (cr_disponivel) {
     Title = "Rede de Co-citação de Autores",
     size.cex = TRUE,
     label.cex = TRUE,
-    edgesize = 3,
+    edgesize = 3,   # Para n = 30, estou tentando manter o edgesize máximo de 3 para não ter poluição visual
     edges.min = 3,
     community.repulsion = 0.1
   )
@@ -247,6 +239,7 @@ if (cr_disponivel) {
               edgesize = 3, edges.min = 5, community.repulsion = 0.1)
   dev.off()
 
+# Acrescentado pelo Claude para mostrar output no pdf
 } else {
   cat("\n============================================================\n")
   cat("ANÁLISES NÃO REALIZADAS: Co-citação e Coupling Bibliográfico\n")
@@ -266,8 +259,7 @@ if (cr_disponivel) {
 
 # Análise dos Clusters de Colaboração
 
-Vamos examinar os clusters identificados na rede de co-autoria para
-entender os subgrupos de pesquisa do campo.
+Vamos examinar os clusters identificados na rede de co-autoria para entender os subgrupos de pesquisa do campo.
 
 ```{r}
 #| label: clusters-coautoria
@@ -285,16 +277,13 @@ if (!is.null(net_autores$cluster_res)) {
 }
 ```
 
-# Resumo das Redes
+# Resumo das Redes ()
 
 As análises de rede revelam:
 
-1. **Co-autoria:** Os clusters de co-autoria mostram os grupos de pesquisa
-   ativos no campo, indicando quais pesquisadores trabalham juntos de forma
-   recorrente.
+1. **Co-autoria:** Os clusters de co-autoria mostram os grupos de pesquisa ativos no campo, indicando quais pesquisadores trabalham juntos de forma recorrente.
 
-2. **Colaboração internacional:** A rede de países evidencia os eixos de
-   cooperação científica dominantes (ex: China-UK, China-USA, Europa).
+2. **Colaboração internacional:** A rede de países evidencia os eixos de cooperação científica dominantes (ex: China-UK, China-USA, Europa).
 
 > **Nota para o artigo:** Observar se os clusters de colaboração incluem
 > pesquisadores ou instituições ligados a gestão pública ou suporte à decisão.

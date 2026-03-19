@@ -1,0 +1,166 @@
+---
+title: "01b — Filtro de Journals Q1 Urban Studies"
+subtitle: "Bibliometria de Gêmeos Digitais para Cidades Inteligentes"
+author: "Leonardo Camilo-da-Silva"
+date: today
+format:
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    documentclass: article
+    geometry: margin=2.5cm
+    fontsize: 11pt
+    colorlinks: true
+execute:
+  warning: false
+  message: false
+---
+
+# Introdução
+
+Este notebook filtra os arquivos `.bib` exportados do Scopus e Web of Science,
+mantendo apenas artigos publicados em **journals Q1 em Urban Studies** (SCImago 2024).
+
+A deduplicação será realizada posteriormente no Parsifal.
+
+**Entradas:**
+
+- `data/raw/scopus_2.bib`
+- `data/raw/savedrecs.bib`
+
+**Saídas:**
+
+- `data/processed/scopus_2_q1.bib`
+- `data/processed/wos_2_q1.bib`
+
+# ISSNs Q1 Urban Studies (SCImago 2024)
+
+```{r}
+#| label: journals-q1
+
+q1_issns <- c(
+  "0013-1245", "0042-0859", "0042-0972", "0042-0980", "0094-1190",
+  "0166-0462", "0169-2046", "0194-4363", "0197-3975", "0198-9715",
+  "0264-2751", "0267-3037", "0272-3638", "0309-1317", "0386-1112",
+  "0735-2166", "0739-456X", "0811-1146", "0891-2424", "0895-5638",
+  "0956-2478", "0969-7764", "1051-1482", "1063-0732", "1077-291X",
+  "1078-0874", "1083-8155", "1095-9068", "1099-3460", "1226-5934",
+  "1357-4809", "1357-5317", "1360-063X", "1360-4813", "1403-6096",
+  "1461-7145", "1466-1810", "1466-1853", "1467-9906", "1468-2427",
+  "1468-2869", "1468-4519", "1469-9664", "1470-3629", "1476-7244",
+  "1535-6841", "1552-3535", "1552-3543", "1552-6577", "1552-8340",
+  "1566-4910", "1573-045X", "1573-1642", "1573-1960", "1573-7772",
+  "1651-2278", "1746-0301", "1753-5069", "1753-5077", "1754-9175",
+  "1754-9183", "1877-9166", "1877-9174", "1879-2308", "1938-2847",
+  "1938-7806", "1938-7849", "1946-3138", "1946-3146", "2045-2101",
+  "2045-211X", "2046-6099", "2046-6102", "2058-5543", "2095-2635",
+  "2095-2643", "2097-0129", "2152-050X", "2161-6779", "2183-7635",
+  "2193-7680", "2212-0955", "2213-624X", "2213-6258", "2226-5856",
+  "2297-3362", "2374-8834", "2375-0901", "2379-2957", "2398-9629",
+  "2399-8083", "2399-8091", "2413-8851", "2524-5279", "2524-5287",
+  "2577-4441", "2577-445X", "2589-0360", "2590-051X", "2590-1982",
+  "2590-2520", "2624-6511", "2624-9634", "2631-6862", "2631-7680",
+  "2632-6655", "2664-3286", "2666-660X", "2688-4674", "2688-4682",
+  "2730-6852"
+)
+
+# Normalizar para comparação (remover hífens)
+q1_issns_norm <- gsub("-", "", q1_issns)
+
+cat("Total de ISSNs Q1 Urban Studies:", length(q1_issns), "\n")
+```
+
+# Função de Filtro
+
+```{r}
+#| label: funcao-filtro
+
+filtrar_bib_por_issn <- function(arquivo_bib, issns_norm) {
+  linhas <- readLines(arquivo_bib, warn = FALSE)
+
+  # Identificar início de cada entrada (@article, @inproceedings, etc.)
+  inicio <- grep("^@", linhas)
+  if (length(inicio) == 0) return(character(0))
+
+  fim <- c(inicio[-1] - 1, length(linhas))
+
+  entradas_filtradas <- character(0)
+
+  for (i in seq_along(inicio)) {
+    bloco <- linhas[inicio[i]:fim[i]]
+    bloco_texto <- paste(bloco, collapse = " ")
+
+    # Extrair todos os campos issn/eissn do bloco
+    issn_matches <- regmatches(
+      bloco_texto,
+      gregexpr("(?:issn|eissn)\\s*=\\s*\\{([^}]+)\\}", bloco_texto, ignore.case = TRUE)
+    )[[1]]
+
+    if (length(issn_matches) == 0) next
+
+    # Limpar e normalizar os ISSNs encontrados
+    issns_bib <- gsub("(?:issn|eissn)\\s*=\\s*\\{|\\}", "", issn_matches, ignore.case = TRUE)
+    issns_bib <- gsub("-", "", toupper(trimws(issns_bib)))
+
+    # Verificar se algum ISSN do artigo está na lista Q1
+    if (any(issns_bib %in% issns_norm)) {
+      entradas_filtradas <- c(entradas_filtradas, bloco, "")
+    }
+  }
+
+  return(entradas_filtradas)
+}
+```
+
+# Filtrar Scopus
+
+```{r}
+#| label: filtrar-scopus
+
+library(here)
+
+arquivo_scopus <- here("data", "raw", "scopus_2.bib")
+total_scopus <- sum(grepl("^@", readLines(arquivo_scopus, warn = FALSE)))
+
+bib_scopus <- filtrar_bib_por_issn(arquivo_scopus, q1_issns_norm)
+n_scopus <- sum(grepl("^@", bib_scopus))
+
+writeLines(bib_scopus, here("data", "processed", "scopus_2_q1.bib"))
+
+cat("Scopus — Total:", total_scopus, "→ Q1:", n_scopus, "\n")
+```
+
+# Filtrar Web of Science
+
+```{r}
+#| label: filtrar-wos
+
+arquivo_wos <- here("data", "raw", "savedrecs.bib")
+total_wos <- sum(grepl("^@", readLines(arquivo_wos, warn = FALSE)))
+
+bib_wos <- filtrar_bib_por_issn(arquivo_wos, q1_issns_norm)
+n_wos <- sum(grepl("^@", bib_wos))
+
+writeLines(bib_wos, here("data", "processed", "wos_2_q1.bib"))
+
+cat("WoS — Total:", total_wos, "→ Q1:", n_wos, "\n")
+```
+
+# Resumo
+
+```{r}
+#| label: resumo
+
+cat("\n========================================\n")
+cat("   FILTRO Q1 URBAN STUDIES (SCImago)    \n")
+cat("========================================\n\n")
+cat("Scopus:", total_scopus, "→", n_scopus, "artigos Q1\n")
+cat("WoS:   ", total_wos, "→", n_wos, "artigos Q1\n")
+cat("Total Q1 (com possíveis duplicatas):", n_scopus + n_wos, "\n\n")
+cat("Saídas:\n")
+cat("  data/processed/scopus_2_q1.bib\n")
+cat("  data/processed/wos_2_q1.bib\n\n")
+cat("Próximo passo: importar no Parsifal para deduplicação e triagem.\n")
+cat("========================================\n")
+```

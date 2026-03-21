@@ -10,9 +10,10 @@ Este artigo realiza uma análise bibliométrica sistemática da literatura sobre
 
 | Semana | Período | Tarefa | Entregável | Status |
 |--------|---------|--------|------------|--------|
-| 1–2 | Sem. 1–2 | Coleta de dados no Scopus + setup do R | `data/raw/` populada, `00_setup.qmd` funcional | ⏳ |
-| 3–4 | Sem. 3–4 | Importação, limpeza e análises descritivas | `01_data_import.qmd`, `02_descriptive_analysis.qmd`, figuras | ⏳ |
-| 5–6 | Sem. 5–6 | Análises de rede e keywords | `03_network_analysis.qmd`, `04_keyword_analysis.qmd`, mapas temáticos | ⏳ |
+| 1–2 | Sem. 1–2 | Coleta de dados no Scopus/WoS + setup do R | `data/raw/` populada, `00_setup.qmd` funcional | ✅ |
+| 3–4 | Sem. 3–4 | Importação, limpeza e análises descritivas | `01_data_import.qmd`, `02_descriptive_analysis.qmd`, figuras | ✅ |
+| 5–6 | Sem. 5–6 | Análises de rede e keywords | `03_network_analysis.qmd`, `04_keyword_analysis.qmd`, mapas temáticos | ✅ |
+| 6–7 | Sem. 6–7 | Artigo consolidado com todas as análises | `R/artigo.qmd` renderizado para PDF | ✅ |
 | 7–8 | Sem. 7–8 | Escrita: Metodologia + Resultados | Seções redigidas do manuscrito | ⏳ |
 | 9 | Sem. 9 | Escrita: Introdução + Referencial Teórico + Conclusão | Draft completo do artigo | ⏳ |
 | 10 | Sem. 10 | Revisão final + formatação Cities + submissão | Manuscrito final submetido | ⏳ |
@@ -104,11 +105,23 @@ TITLE-ABS-KEY("digital twin*" AND ("smart cit*" OR "urban*"))
 
 ---
 
-## Diário de Progresso
+## Próximos Passos
 
-*Registre aqui o que foi feito a cada sessão de trabalho.*
+### Concluídos
 
-### [DATA]
-- O que foi feito:
-- Próximos passos:
-- Dúvidas/bloqueios:
+1. ✅ ~~Decidir query + filtro definitivos~~ — query Fase 3 + filtro combinado 3 categorias SCImago (159 artigos)
+2. ✅ ~~Exportar .bib filtrados~~ — `scopus_2_filt.bib` e `wos_2_filt.bib` gerados
+3. ✅ ~~Configurar ambiente R e renderizar pipeline~~ — Todos os 7 QMDs renderizados com sucesso
+4. ✅ ~~Adaptar `01_data_import.qmd` para corpus filtrado~~ — paths atualizados para `scopus_2_filt.bib` + `wos_2_filt.bib`
+5. ✅ ~~Criar `R/artigo.qmd` consolidado~~ — todas as 10 análises do professor + exploratórias, renderizado para PDF
+
+### Pendentes
+
+6. ⏳ **Rerodar QMDs individuais (02–06) com corpus filtrado** — os QMDs 02–06 ainda usam `df_bibliometria.rds` antigo (767 artigos sem filtro de journal); precisam ser rerodados após `01_data_import.qmd` gerar novo .rds com 159 artigos
+7. ⏳ **Ler 2–3 reviews existentes** — Deng et al. (2021, TC=515), Weil et al. (2023, TC=213) — para posicionar o artigo na literatura
+8. ⏳ Importar .bib filtrados no Parsif.al para triagem PRISMA (título/abstract screening)
+9. ⏳ BERTopic no Google Colab — análise de tópicos por modelagem de linguagem
+10. ⏳ Gerar PRISMA flowchart definitivo (valores do Parsif.al + DiagrammeR R)
+11. ⏳ VOSviewer — visualizações de redes complementares
+12. ⏳ Escrita do manuscrito final — adaptar `artigo.qmd` para formato da revista Cities (7.000–9.000 palavras)
+13. ⏳ Revisão final + formatação + submissão

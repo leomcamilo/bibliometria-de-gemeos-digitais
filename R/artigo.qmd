@@ -1,0 +1,705 @@
+---
+title: "Digital Twins for Smart Cities: A Bibliometric Analysis of the Decision Support Gap"
+subtitle: "ADM 804 — COPPEAD/UFRJ"
+author: "Leonardo Mello Camilo da Silva"
+date: today
+format:
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    fig-width: 10
+    fig-height: 6
+    documentclass: article
+    geometry: margin=2.5cm
+    fontsize: 11pt
+    colorlinks: true
+    keep-tex: false
+execute:
+  warning: false
+  message: false
+  echo: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+library(bibliometrix)
+library(tidyverse)
+library(igraph)
+library(ggraph)
+library(ggrepel)
+library(knitr)
+library(kableExtra)
+library(here)
+library(wordcloud2)
+library(webshot2)
+
+# Importar os .bib filtrados (3 categorias SCImago: Urban Studies + Geography/Planning/Dev + Decision Sciences)
+df_scopus <- convert2df(
+  file = here("data", "processed", "scopus_2_filt.bib"),
+  dbsource = "scopus", format = "bibtex"
+)
+df_wos <- convert2df(
+  file = here("data", "processed", "wos_2_filt.bib"),
+  dbsource = "wos", format = "bibtex"
+)
+df <- mergeDbSources(df_scopus, df_wos, remove.duplicated = TRUE)
+
+# Remover duplicatas residuais por título
+df <- df %>% distinct(TI, .keep_all = TRUE)
+
+# Extrair metadados de país
+df <- metaTagExtraction(df, Field = "AU_CO", sep = ";")
+
+# Análise geral do bibliometrix
+resultados <- biblioAnalysis(df)
+
+cat("Corpus carregado:", nrow(df), "artigos únicos\n")
+```
+
+# Visão Geral do Corpus
+
+```{r}
+#| label: estatisticas-gerais
+
+stats_df <- data.frame(
+  Métrica = c(
+    "Total de artigos",
+    "Período",
+    "Periódicos únicos",
+    "Autores únicos",
+    "Países",
+    "Média de citações por artigo",
+    "Mediana de citações",
+    "Total de citações"
+  ),
+  Valor = c(
+    nrow(df),
+    paste(min(df$PY, na.rm = TRUE), "–", max(df$PY, na.rm = TRUE)),
+    n_distinct(df$SO),
+    length(unique(unlist(strsplit(df$AU, ";")))),
+    n_distinct(resultados$Countries),
+    round(mean(df$TC, na.rm = TRUE), 1),
+    median(df$TC, na.rm = TRUE),
+    sum(df$TC, na.rm = TRUE)
+  )
+)
+
+kable(stats_df, caption = "Table 1 — General statistics of the bibliometric corpus")
+```
+
+# Crescimento da Área
+
+## Publicações por ano
+
+```{r}
+#| label: fig-evolucao-temporal
+#| fig-cap: "Annual scientific production on digital twins and smart cities"
+
+pub_ano <- df %>%
+  count(PY, name = "Artigos") %>%
+  filter(!is.na(PY)) %>%
+  arrange(PY)
+
+ggplot(pub_ano, aes(x = PY, y = Artigos)) +
+  geom_line(color = "#2C3E50", linewidth = 1) +
+  geom_point(color = "#2C3E50", size = 3) +
+  geom_text(aes(label = Artigos), vjust = -1, size = 3.5) +
+  scale_x_continuous(breaks = seq(min(pub_ano$PY), max(pub_ano$PY), 1)) +
+  labs(x = "Year", y = "Number of Articles") +
+  theme_minimal(base_size = 13) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave(here("output", "figures", "fig_evolucao_temporal.png"),
+       width = 10, height = 6, dpi = 300)
+```
+
+# Autores Mais Prolíficos
+
+```{r}
+#| label: tbl-top-autores
+
+top_autores <- resultados$Authors %>%
+  as.data.frame() %>%
+  head(10)
+names(top_autores) <- c("Author", "Articles")
+top_autores$Articles <- as.numeric(top_autores$Articles)
+
+kable(top_autores, caption = "Table 2 — Top 10 most prolific authors")
+```
+
+```{r}
+#| label: fig-top-autores
+#| fig-cap: "Top 10 most prolific authors"
+
+ggplot(top_autores, aes(x = reorder(Author, Articles), y = Articles)) +
+  geom_col(fill = "#8E44AD", width = 0.7) +
+  geom_text(aes(label = Articles), hjust = -0.2, size = 3.5) +
+  coord_flip() +
+  labs(x = NULL, y = "Number of Articles") +
+  theme_minimal(base_size = 13)
+
+ggsave(here("output", "figures", "fig_top_autores.png"),
+       width = 10, height = 6, dpi = 300)
+```
+
+# Evolução Temporal dos Autores
+
+Este gráfico mostra a produção dos autores mais prolíficos ao longo do tempo.
+Cada ponto representa um artigo; o tamanho do ponto é proporcional ao número de citações recebidas.
+
+```{r}
+#| label: fig-author-prod-over-time
+#| fig-cap: "Author production over time — top 10 authors (point size proportional to citations)"
+#| fig-height: 8
+
+# authorProdOverTime() do bibliometrix
+apt <- authorProdOverTime(df, k = 10, graph = FALSE)
+
+# Gráfico customizado de pontos + linha
+p_apt <- ggplot(apt$dfAU, aes(x = year, y = Author, size = TCpY)) +
+  geom_point(color = "#2C3E50", alpha = 0.7) +
+  geom_line(aes(group = Author), color = "#2C3E50", linewidth = 0.4, alpha = 0.5) +
+  scale_size_continuous(range = c(2, 8), name = "Citations/Year") +
+  scale_x_continuous(breaks = seq(min(apt$dfAU$year), max(apt$dfAU$year), 1)) +
+  labs(x = "Year", y = NULL) +
+  theme_minimal(base_size = 13) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(p_apt)
+
+ggsave(here("output", "figures", "fig_author_prod_over_time.png"),
+       plot = p_apt, width = 10, height = 8, dpi = 300)
+```
+
+```{r}
+#| label: tbl-author-prod-over-time
+
+# Tabela resumo da produção dos autores ao longo do tempo
+apt$dfPapersAU %>%
+  head(15) %>%
+  mutate(
+    TI = ifelse(nchar(TI) > 50, paste0(substr(TI, 1, 47), "..."), TI),
+    SO = ifelse(nchar(SO) > 30, paste0(substr(SO, 1, 27), "..."), SO)
+  ) %>%
+  kable(
+    caption = "Table 3 — Author production over time (selected entries)",
+    col.names = c("Author", "Year", "Title", "Journal", "DOI", "TC", "TC/Y"),
+    booktabs = TRUE
+  ) %>%
+  kable_styling(font_size = 8, latex_options = c("hold_position", "scale_down")) %>%
+  column_spec(1, width = "1.3cm") %>%
+  column_spec(2, width = "1.2cm") %>%
+  column_spec(3, width = "5cm") %>%
+  column_spec(4, width = "3cm") %>%
+  column_spec(5, width = "3cm") %>%
+  column_spec(6, width = "1cm") %>%
+  column_spec(7, width = "1.2cm")
+```
+
+# Centralidade dos Autores na Rede de Co-autoria
+
+A centralidade mede a importância de cada autor na rede de colaboração. Autores com alta *betweenness centrality* são pontes entre grupos de pesquisa; autores com alto *degree* têm muitos co-autores diretos.
+
+```{r}
+#| label: tbl-centralidade-autores
+
+# Construir rede de co-autoria
+rede_autores <- biblioNetwork(df, analysis = "collaboration", network = "authors")
+
+# Converter para igraph
+g <- graph_from_adjacency_matrix(rede_autores, mode = "undirected", weighted = TRUE, diag = FALSE)
+
+# Calcular métricas de centralidade
+cent_df <- data.frame(
+  Author = V(g)$name,
+  Degree = degree(g),
+  Betweenness = round(betweenness(g, normalized = TRUE), 4),
+  Closeness = round(closeness(g, normalized = TRUE), 4),
+  PageRank = round(page_rank(g)$vector, 4)
+) %>%
+  arrange(desc(Betweenness)) %>%
+  head(15)
+
+kable(cent_df,
+      caption = "Table 4 — Top 15 authors by betweenness centrality in the co-authorship network")
+```
+
+```{r}
+#| label: fig-centralidade-autores
+#| fig-cap: "Top 15 authors by betweenness centrality"
+
+ggplot(cent_df, aes(x = reorder(Author, Betweenness), y = Betweenness)) +
+  geom_col(fill = "#E67E22", width = 0.7) +
+  geom_text(aes(label = sprintf("%.3f", Betweenness)), hjust = -0.1, size = 3) +
+  coord_flip() +
+  labs(x = NULL, y = "Betweenness Centrality (normalized)") +
+  theme_minimal(base_size = 13)
+
+ggsave(here("output", "figures", "fig_centralidade_autores.png"),
+       width = 10, height = 6, dpi = 300)
+```
+
+# Top Periódicos
+
+```{r}
+#| label: tbl-top-journals
+
+top_journals <- df %>%
+  count(SO, name = "Articles", sort = TRUE) %>%
+  head(10)
+
+kable(top_journals, col.names = c("Journal", "Articles"),
+      caption = "Table 5 — Top 10 most productive journals")
+```
+
+```{r}
+#| label: fig-top-journals
+#| fig-cap: "Top 10 most productive journals"
+
+ggplot(top_journals, aes(x = reorder(SO, Articles), y = Articles)) +
+  geom_col(fill = "#27AE60", width = 0.7) +
+  geom_text(aes(label = Articles), hjust = -0.2, size = 3.5) +
+  coord_flip() +
+  labs(x = NULL, y = "Number of Articles") +
+  theme_minimal(base_size = 13) +
+  theme(axis.text.y = element_text(size = 9))
+
+ggsave(here("output", "figures", "fig_top_journals.png"),
+       width = 12, height = 6, dpi = 300)
+```
+
+# Top Países Produtores
+
+```{r}
+#| label: tbl-top-paises
+
+top_paises <- resultados$Countries %>%
+  as.data.frame() %>%
+  head(10)
+names(top_paises) <- c("Country", "Articles")
+top_paises$Articles <- as.numeric(top_paises$Articles)
+
+kable(top_paises, caption = "Table 6 — Top 10 countries by scientific production")
+```
+
+```{r}
+#| label: fig-top-paises
+#| fig-cap: "Top 10 countries by scientific production"
+
+ggplot(top_paises, aes(x = reorder(Country, Articles), y = Articles)) +
+  geom_col(fill = "#3498DB", width = 0.7) +
+  geom_text(aes(label = Articles), hjust = -0.2, size = 3.5) +
+  coord_flip() +
+  labs(x = NULL, y = "Number of Articles") +
+  theme_minimal(base_size = 13)
+
+ggsave(here("output", "figures", "fig_top_paises.png"),
+       width = 10, height = 6, dpi = 300)
+```
+
+# Top Artigos Mais Citados
+
+```{r}
+#| label: tbl-top-citados
+
+top_citados <- df %>%
+  select(AU, TI, SO, PY, TC) %>%
+  arrange(desc(TC)) %>%
+  head(10) %>%
+  mutate(
+    Author = sapply(strsplit(AU, ";"), function(x) {
+      if (length(x) > 1) paste0(trimws(x[1]), " et al.")
+      else trimws(x[1])
+    }),
+    Title = ifelse(nchar(TI) > 70, paste0(substr(TI, 1, 67), "..."), TI)
+  ) %>%
+  mutate(
+    Journal = ifelse(nchar(SO) > 35, paste0(substr(SO, 1, 32), "..."), SO)
+  ) %>%
+  select(Author, Title, Journal, Year = PY, Citations = TC)
+
+kable(top_citados, caption = "Table 7 — Top 10 most cited articles",
+      booktabs = TRUE) %>%
+  kable_styling(font_size = 8, latex_options = c("hold_position", "scale_down")) %>%
+  column_spec(1, width = "2.5cm") %>%
+  column_spec(2, width = "5.5cm") %>%
+  column_spec(3, width = "3.5cm") %>%
+  column_spec(4, width = "1.2cm") %>%
+  column_spec(5, width = "1.5cm")
+```
+
+# Rede de Co-autoria
+
+```{r}
+#| label: fig-rede-coautoria
+#| fig-cap: "Co-authorship network — clusters represent research groups"
+#| fig-height: 8
+
+set.seed(804)
+net_autores <- networkPlot(
+  rede_autores,
+  n = 30,
+  type = "fruchterman",
+  Title = "Co-authorship Network",
+  size.cex = TRUE,
+  label.cex = TRUE,
+  edgesize = 3,
+  edges.min = 2,
+  community.repulsion = 0.1
+)
+```
+
+```{r}
+#| label: save-rede-coautoria
+#| include: false
+
+png(here("output", "figures", "fig_rede_coautoria.png"),
+    width = 10, height = 8, units = "in", res = 300)
+set.seed(804)
+networkPlot(rede_autores, n = 30, type = "fruchterman",
+            Title = "Co-authorship Network",
+            size.cex = TRUE, label.cex = TRUE,
+            edgesize = 3, edges.min = 2, community.repulsion = 0.1)
+dev.off()
+```
+
+# Rede de Colaboração entre Países
+
+```{r}
+#| label: fig-rede-paises
+#| fig-cap: "International collaboration network between countries"
+#| fig-height: 8
+
+rede_paises <- biblioNetwork(df, analysis = "collaboration", network = "countries")
+
+set.seed(804)
+net_paises <- networkPlot(
+  rede_paises,
+  n = 20,
+  type = "fruchterman",
+  Title = "International Collaboration Network",
+  size.cex = TRUE,
+  label.cex = TRUE,
+  edgesize = 5,
+  edges.min = 2,
+  community.repulsion = 0.1
+)
+```
+
+```{r}
+#| label: save-rede-paises
+#| include: false
+
+png(here("output", "figures", "fig_rede_paises.png"),
+    width = 10, height = 8, units = "in", res = 300)
+set.seed(804)
+networkPlot(rede_paises, n = 20, type = "fruchterman",
+            Title = "International Collaboration Network",
+            size.cex = TRUE, label.cex = TRUE,
+            edgesize = 5, edges.min = 2, community.repulsion = 0.1)
+dev.off()
+```
+
+# Author Coupling
+
+O acoplamento bibliográfico (bibliographic coupling) conecta autores que citam as mesmas referências, revelando frentes de pesquisa com base intelectual comum.
+
+```{r}
+#| label: fig-author-coupling
+#| fig-cap: "Bibliographic coupling network between authors"
+#| fig-height: 8
+
+# Verificar se campo CR está disponível
+cr_disponivel <- any(!is.na(df$CR) & df$CR != "" & df$CR != "none")
+
+if (cr_disponivel) {
+  rede_coupling <- tryCatch(
+    biblioNetwork(df, analysis = "coupling", network = "authors"),
+    error = function(e) { cat("Coupling error:", e$message, "\n"); NULL }
+  )
+
+  if (!is.null(rede_coupling)) {
+    set.seed(804)
+    net_coupling <- networkPlot(
+      rede_coupling,
+      n = 30,
+      type = "fruchterman",
+      Title = "Bibliographic Coupling — Authors",
+      size.cex = TRUE,
+      label.cex = TRUE,
+      edgesize = 3,
+      edges.min = 5,
+      community.repulsion = 0.1
+    )
+
+    png(here("output", "figures", "fig_author_coupling.png"),
+        width = 10, height = 8, units = "in", res = 300)
+    set.seed(804)
+    networkPlot(rede_coupling, n = 30, type = "fruchterman",
+                Title = "Bibliographic Coupling — Authors",
+                size.cex = TRUE, label.cex = TRUE,
+                edgesize = 3, edges.min = 5, community.repulsion = 0.1)
+    dev.off()
+  } else {
+    cat("Bibliographic coupling could not be computed.\n")
+  }
+} else {
+  cat("Cited references (CR) not available. Bibliographic coupling requires re-export from Scopus/WoS with 'Include references'.\n")
+}
+```
+
+# Contagem de Palavras-chave
+
+```{r}
+#| label: tbl-keywords
+
+kw_autor <- df$DE %>%
+  na.omit() %>%
+  strsplit(";") %>%
+  unlist() %>%
+  trimws() %>%
+  tolower() %>%
+  table() %>%
+  sort(decreasing = TRUE) %>%
+  as.data.frame()
+names(kw_autor) <- c("Keyword", "Freq")
+
+kable(head(kw_autor, 20), caption = "Table 8 — Top 20 author keywords")
+```
+
+```{r}
+#| label: fig-keywords
+#| fig-cap: "Top 20 author keywords by frequency"
+
+ggplot(head(kw_autor, 20), aes(x = reorder(Keyword, Freq), y = Freq)) +
+  geom_col(fill = "#E74C3C", width = 0.7) +
+  geom_text(aes(label = Freq), hjust = -0.2, size = 3.5) +
+  coord_flip() +
+  labs(x = NULL, y = "Frequency") +
+  theme_minimal(base_size = 13)
+
+ggsave(here("output", "figures", "fig_top_keywords.png"),
+       width = 10, height = 8, dpi = 300)
+```
+
+# Wordcloud de Palavras-chave
+
+```{r}
+#| label: fig-wordcloud
+#| fig-cap: "Word cloud of author keywords"
+
+# Preparar dados para wordcloud
+wc_data <- head(kw_autor, 80)
+
+# Gerar wordcloud como imagem estática via base R wordcloud
+# (wordcloud2 gera HTML, difícil de capturar em PDF)
+if (requireNamespace("wordcloud", quietly = TRUE)) {
+  library(wordcloud)
+  png(here("output", "figures", "fig_wordcloud.png"),
+      width = 10, height = 8, units = "in", res = 300)
+  par(mar = c(0, 0, 0, 0))
+  wordcloud(
+    words = wc_data$Keyword,
+    freq = wc_data$Freq,
+    min.freq = 1,
+    max.words = 80,
+    random.order = FALSE,
+    rot.per = 0.15,
+    colors = brewer.pal(8, "Dark2"),
+    scale = c(3, 0.5)
+  )
+  dev.off()
+  knitr::include_graphics(here("output", "figures", "fig_wordcloud.png"))
+} else {
+  # Fallback: usar wordcloud2 salvando como HTML + screenshot
+  wc <- wordcloud2(wc_data, size = 0.6, color = "random-dark")
+  print(wc)
+}
+```
+
+# Rede de Co-ocorrência de Palavras-chave
+
+```{r}
+#| label: fig-rede-keywords
+#| fig-cap: "Keyword co-occurrence network"
+#| fig-height: 8
+
+rede_kw <- biblioNetwork(df, analysis = "co-occurrences", network = "keywords")
+
+set.seed(2024)
+net_kw <- networkPlot(
+  rede_kw,
+  n = 40,
+  type = "fruchterman",
+  Title = "Keyword Co-occurrence Network",
+  size.cex = TRUE,
+  label.cex = TRUE,
+  edgesize = 3,
+  edges.min = 3,
+  community.repulsion = 0.1
+)
+```
+
+```{r}
+#| label: save-rede-keywords
+#| include: false
+
+png(here("output", "figures", "fig_rede_keywords.png"),
+    width = 10, height = 8, units = "in", res = 300)
+set.seed(2024)
+networkPlot(rede_kw, n = 40, type = "fruchterman",
+            Title = "Keyword Co-occurrence Network",
+            size.cex = TRUE, label.cex = TRUE,
+            edgesize = 3, edges.min = 3, community.repulsion = 0.1)
+dev.off()
+```
+
+# Mapa Temático
+
+O mapa temático posiciona os clusters de palavras-chave em quatro quadrantes:
+
+- **Motor themes** (alta centralidade + alta densidade): temas centrais e bem desenvolvidos
+- **Niche themes** (baixa centralidade + alta densidade): temas periféricos mas coesos
+- **Basic themes** (alta centralidade + baixa densidade): temas centrais mas pouco desenvolvidos
+- **Emerging/declining themes** (baixa centralidade + baixa densidade): temas periféricos e pouco desenvolvidos
+
+```{r}
+#| label: fig-mapa-tematico
+#| fig-cap: "Thematic map — strategic positioning of research themes"
+#| fig-height: 10
+
+mapa <- thematicMap(
+  df,
+  field = "DE",
+  n = 250,
+  minfreq = 3,
+  stemming = FALSE,
+  size = 0.5,
+  repel = TRUE
+)
+
+print(mapa$map)
+
+ggsave(here("output", "figures", "fig_mapa_tematico.png"),
+       plot = mapa$map, width = 12, height = 10, dpi = 300)
+```
+
+```{r}
+#| label: tbl-clusters-mapa
+
+clusters_info <- mapa$clusters
+
+clusters_display <- clusters_info %>%
+  mutate(
+    Quadrant = case_when(
+      rcentrality >= 0.5 & rdensity >= 0.5 ~ "Motor",
+      rcentrality < 0.5 & rdensity >= 0.5 ~ "Niche",
+      rcentrality >= 0.5 & rdensity < 0.5 ~ "Basic",
+      TRUE ~ "Emerging/Declining"
+    )
+  ) %>%
+  select(Cluster = name, Centrality = rcentrality, Density = rdensity, Quadrant, Keywords = words)
+
+kable(clusters_display, digits = 3,
+      caption = "Table 9 — Thematic clusters from the strategic diagram")
+
+write_csv(clusters_info, here("output", "tables", "clusters_mapa_tematico.csv"))
+```
+
+# Evolução Temática
+
+```{r}
+#| label: fig-evolucao-tematica
+#| fig-cap: "Thematic evolution over time"
+
+ano_min <- min(df$PY, na.rm = TRUE)
+ano_max <- max(df$PY, na.rm = TRUE)
+ano_corte <- floor((ano_min + ano_max) / 2)
+
+evolucao <- tryCatch({
+  thematicEvolution(df, field = "DE", years = c(ano_corte), n = 100, minFreq = 3)
+}, error = function(e) {
+  cat("Thematic evolution error:", e$message, "\n")
+  tryCatch(
+    thematicEvolution(df, field = "DE",
+                      years = c(ano_min + 2, ano_max - 2),
+                      n = 100, minFreq = 2),
+    error = function(e2) { cat("Persistent error:", e2$message, "\n"); NULL }
+  )
+})
+
+if (!is.null(evolucao)) {
+  plotThematicEvolution(evolucao$Nodes, evolucao$Edges)
+}
+```
+
+# Análise do Gap — Suporte à Decisão
+
+```{r}
+#| label: tbl-gap-analysis
+
+# Verificar presença de termos de decisão/gestão nas keywords
+termos_gap <- c(
+  "decision support", "decision making", "decision-making",
+  "public management", "public administration", "urban governance",
+  "governance", "policy", "public policy", "urban management",
+  "municipal", "city management"
+)
+
+gap_df <- data.frame(
+  Term = termos_gap,
+  Frequency = sapply(termos_gap, function(t) {
+    f <- kw_autor$Freq[kw_autor$Keyword == t]
+    if (length(f) == 0) 0 else f
+  })
+)
+
+kable(gap_df, caption = "Table 10 — Frequency of decision-support and public management terms in author keywords")
+```
+
+```{r}
+#| label: gap-clusters
+
+# Verificar nos clusters do mapa temático
+termos_decisao <- c("decision", "governance", "management", "policy",
+                     "public", "municipal", "administration")
+
+clusters_com_decisao <- clusters_info %>%
+  filter(str_detect(tolower(words), paste(termos_decisao, collapse = "|")))
+
+if (nrow(clusters_com_decisao) > 0) {
+  cat("Clusters containing decision/management terms:\n\n")
+  for (i in seq_len(nrow(clusters_com_decisao))) {
+    centralidade <- clusters_com_decisao$rcentrality[i]
+    densidade <- clusters_com_decisao$rdensity[i]
+    quadrante <- case_when(
+      centralidade >= 0.5 & densidade >= 0.5 ~ "MOTOR",
+      centralidade < 0.5 & densidade >= 0.5 ~ "NICHE",
+      centralidade >= 0.5 & densidade < 0.5 ~ "BASIC",
+      TRUE ~ "EMERGING/DECLINING"
+    )
+    cat(sprintf("  '%s' → %s (centrality: %.3f, density: %.3f)\n",
+                clusters_com_decisao$name[i], quadrante, centralidade, densidade))
+  }
+} else {
+  cat("No thematic cluster contains decision-support or public management terms.\n")
+  cat("This constitutes strong evidence of the identified research gap.\n")
+}
+```
+
+# Exportar Tabelas
+
+```{r}
+#| label: exportar-tabelas
+#| include: false
+
+write_csv(pub_ano, here("output", "tables", "publicacoes_por_ano.csv"))
+write_csv(top_journals, here("output", "tables", "top_journals.csv"))
+write_csv(top_citados, here("output", "tables", "top_citados.csv"))
+write_csv(stats_df, here("output", "tables", "estatisticas_gerais.csv"))
+write_csv(cent_df, here("output", "tables", "centralidade_autores.csv"))
+write_csv(gap_df, here("output", "tables", "gap_analysis.csv"))
+```

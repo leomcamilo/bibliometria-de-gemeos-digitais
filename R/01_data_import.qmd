@@ -82,26 +82,28 @@ O `bibliometrix` possui a função `convert2df()` que converte arquivos bibliogr
 ```{r}
 #| label: importar-dados
 
-# Caminho para o arquivo exportado do Scopus
-# NOTA: Ajuste o nome do arquivo conforme o que foi salvo na pasta data/raw/
-arquivo_bib <- here("data", "raw", "scopus.bib")
+# Caminhos para os arquivos filtrados (Fase 9: filtro combinado 3 categorias SCImago)
+arquivo_scopus <- here("data", "processed", "scopus_2_filt.bib")
+arquivo_wos    <- here("data", "processed", "wos_2_filt.bib")
 
-# Verificar se o arquivo existe
-if (!file.exists(arquivo_bib)) {
-  stop(
-    "Arquivo não encontrado: ", arquivo_bib, "\n",
-    "Por favor, exporte os dados do Scopus e salve em data/raw/scopus.bib\n",
-    "Consulte as instruções no início deste notebook."
-  )
+# Verificar se os arquivos existem
+for (arq in c(arquivo_scopus, arquivo_wos)) {
+  if (!file.exists(arq)) {
+    stop("Arquivo não encontrado: ", arq)
+  }
 }
 
-# Converter o arquivo BibTeX para um dataframe do bibliometrix
-# dbsource = "scopus" indica a base de origem
-# format = "bibtex" indica o formato do arquivo
-df <- convert2df(file = arquivo_bib, dbsource = "scopus", format = "bibtex")
+# Importar Scopus
+df_scopus <- convert2df(file = arquivo_scopus, dbsource = "scopus", format = "bibtex")
+cat("Scopus — artigos importados:", nrow(df_scopus), "\n")
 
-# Dimensões do dataset: quantos artigos e quantas variáveis
-cat("Número de artigos:", nrow(df), "\n")
+# Importar Web of Science
+df_wos <- convert2df(file = arquivo_wos, dbsource = "wos", format = "bibtex")
+cat("WoS — artigos importados:", nrow(df_wos), "\n")
+
+# Combinar as duas bases
+df <- mergeDbSources(df_scopus, df_wos, remove.duplicated = TRUE)
+cat("\nApós merge e remoção de duplicatas entre bases:", nrow(df), "\n")
 cat("Número de variáveis:", ncol(df), "\n")
 ```
 
@@ -143,19 +145,19 @@ cat(paste(names(df), collapse = ", "), "\n")
 ```{r}
 #| label: remover-duplicatas
 
-# Verificar duplicatas baseado no DOI (Digital Object Identifier)
+# mergeDbSources já removeu duplicatas entre bases pelo DOI
+# Aqui removemos duplicatas residuais pelo título (mais robusto, pois DOI pode faltar)
 n_antes <- nrow(df)
 
-# Identificar duplicatas pelo título (mais robusto que DOI, que pode estar ausente)
 df <- df %>%
   distinct(TI, .keep_all = TRUE)
 
 n_depois <- nrow(df)
 n_removidos <- n_antes - n_depois
 
-cat("Artigos antes da remoção de duplicatas:", n_antes, "\n")
-cat("Artigos após remoção de duplicatas:", n_depois, "\n")
-cat("Duplicatas removidas:", n_removidos, "\n")
+cat("Artigos antes da remoção residual por título:", n_antes, "\n")
+cat("Artigos após remoção:", n_depois, "\n")
+cat("Duplicatas residuais removidas:", n_removidos, "\n")
 ```
 
 ## Verificar Valores Ausentes
@@ -257,7 +259,7 @@ cat("Total de artigos no dataset final:", nrow(df), "\n")
 
 # Resumo
 
-- **Artigos importados:** `r n_antes` (antes da limpeza)
-- **Artigos no dataset final:** `r nrow(df)` (após remoção de duplicatas)
+- **Scopus:** `r nrow(df_scopus)` artigos | **WoS:** `r nrow(df_wos)` artigos
+- **Artigos no dataset final:** `r nrow(df)` (após merge e remoção de duplicatas)
 - **Período coberto:** `r min(df$PY, na.rm = TRUE)` a `r max(df$PY, na.rm = TRUE)`
 - **Dados salvos em:** `data/processed/df_bibliometria.rds`

@@ -38,12 +38,7 @@ if (is.null(getOption("repos")) || getOption("repos")["CRAN"] == "@CRAN@") {
   options(repos = c(CRAN = "https://cloud.r-project.org"))
 }
 
-# Instalar PRISMAstatement se necessário
-if (!require("PRISMAstatement", quietly = TRUE)) {
-  install.packages("PRISMAstatement")
-}
-
-library(PRISMAstatement)
+library(DiagrammeR)
 library(here)
 ```
 
@@ -113,22 +108,45 @@ todos_preenchidos <- !any(is.na(c(
 
 if (todos_preenchidos) {
 
-  # Gerar diagrama PRISMA usando o pacote PRISMAstatement
-  # A função prisma() gera um flowchart no estilo PRISMA 2020
-  prisma(
-    found         = n_total_bruto,
-    found_other   = 0,
-    no_dupes      = n_apos_dedup,
-    screened       = n_apos_dedup,
-    screen_exclusions = n_excl_titulo,
-    full_text     = n_apos_titulo,
-    full_text_exclusions = n_excl_abstract,
-    qualitative   = n_incluidos,
-    quantitative  = n_incluidos,
-    width = 800,
-    height = 800,
-    font_size = 11
-  )
+  # Gerar diagrama PRISMA usando DiagrammeR (Graphviz)
+  prisma_dot <- sprintf('
+  digraph PRISMA {
+    graph [rankdir=TB, splines=ortho, nodesep=0.8]
+    node [shape=box, style=filled, fillcolor="#E8F4FD", fontsize=11, fontname="Helvetica"]
+
+    id1 [label="Scopus\\n(n = %d)"]
+    id2 [label="Web of Science\\n(n = %d)"]
+    id3 [label="Total identificado\\n(n = %d)"]
+    dup [label="Duplicatas removidas\\n(n = %d)", fillcolor="#FDE8E8"]
+    scr [label="Registros após deduplicação\\n(n = %d)"]
+    ext [label="Excluídos por título\\n(n = %d)", fillcolor="#FDE8E8"]
+    ft  [label="Avaliados por abstract\\n(n = %d)"]
+    exa [label="Excluídos por abstract\\n(n = %d)", fillcolor="#FDE8E8"]
+    inc [label="Incluídos na análise\\n(n = %d)", fillcolor="#D4EDDA", penwidth=2]
+
+    id1 -> id3
+    id2 -> id3
+    id3 -> dup [style=invis]
+    id3 -> scr
+    dup -> scr [style=invis]
+    scr -> ext [style=invis]
+    scr -> ft
+    ext -> ft [style=invis]
+    ft  -> exa [style=invis]
+    ft  -> inc
+    exa -> inc [style=invis]
+
+    { rank=same; id1; id2 }
+    { rank=same; id3; dup }
+    { rank=same; scr; ext }
+    { rank=same; ft; exa }
+  }',
+  n_scopus, n_wos, n_total_bruto,
+  n_duplicatas, n_apos_dedup,
+  n_excl_titulo, n_apos_titulo,
+  n_excl_abstract, n_incluidos)
+
+  grViz(prisma_dot)
 
 } else {
   cat("\n=====================================================\n")
@@ -150,26 +168,12 @@ if (todos_preenchidos) {
 #| label: salvar-prisma
 
 if (todos_preenchidos) {
-  # Salvar como PNG
-  png(here("output", "figures", "00_prisma_diagram.png"),
-      width = 800, height = 800, res = 150)
-
-  prisma(
-    found         = n_total_bruto,
-    found_other   = 0,
-    no_dupes      = n_apos_dedup,
-    screened       = n_apos_dedup,
-    screen_exclusions = n_excl_titulo,
-    full_text     = n_apos_titulo,
-    full_text_exclusions = n_excl_abstract,
-    qualitative   = n_incluidos,
-    quantitative  = n_incluidos,
-    width = 800,
-    height = 800,
-    font_size = 11
-  )
-
-  dev.off()
+  # Salvar como PNG via webshot2
+  prisma_widget <- grViz(prisma_dot)
+  tmp_html <- tempfile(fileext = ".html")
+  htmlwidgets::saveWidget(prisma_widget, tmp_html, selfcontained = TRUE)
+  webshot2::webshot(tmp_html, here("output", "figures", "00_prisma_diagram.png"),
+                    vwidth = 800, vheight = 800)
   cat("Diagrama PRISMA salvo em: output/figures/00_prisma_diagram.png\n")
 } else {
   cat("Diagrama não salvo — números pendentes.\n")

@@ -87,8 +87,8 @@ if (nrow(pub_ano) >= 2) {
   primeiro_ano <- pub_ano$Artigos[1]
   ultimo_ano <- pub_ano$Artigos[nrow(pub_ano)]
   crescimento <- round(ultimo_ano / max(primeiro_ano, 1), 1)
-  cat(sprintf("\nCrescimento total: %dx (de %d para %d artigos)\n",
-              crescimento, primeiro_ano, ultimo_ano))
+  cat(sprintf("\nCrescimento total: %.1fx (de %d para %d artigos)\n",
+              crescimento, as.integer(primeiro_ano), as.integer(ultimo_ano)))
 }
 ```
 

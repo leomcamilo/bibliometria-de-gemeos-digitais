@@ -308,30 +308,52 @@ Análise de como os temas evoluíram ao longo do tempo, dividindo o período em 
 #| fig-cap: "Evolução temática ao longo do período de estudo"
 
 # Dividir o período em fatias temporais para análise de evolução
-# Sugestão: 2015-2019 (fase inicial) e 2020-2024 (fase de crescimento)
-evolucao <- thematicEvolution(
-  df,
-  field = "DE",
-  years = c(2019),       # Ponto de corte entre os períodos
-  n = 100,               # Número de termos por período
-  minFreq = 3            # Frequência mínima
-)
+# Calcular ponto de corte adequado baseado nos dados reais
+ano_min <- min(df$PY, na.rm = TRUE)
+ano_max <- max(df$PY, na.rm = TRUE)
+ano_corte <- floor((ano_min + ano_max) / 2)
+cat("Período:", ano_min, "-", ano_max, "| Corte em:", ano_corte, "\n")
+
+evolucao <- tryCatch({
+  thematicEvolution(
+    df,
+    field = "DE",
+    years = c(ano_corte),
+    n = 100,
+    minFreq = 3
+  )
+}, error = function(e) {
+  cat("Erro na evolução temática:", e$message, "\n")
+  cat("Tentando com 2 cortes...\n")
+  tryCatch(
+    thematicEvolution(df, field = "DE",
+                      years = c(ano_min + 2, ano_max - 2),
+                      n = 100, minFreq = 2),
+    error = function(e2) { cat("Erro persistente:", e2$message, "\n"); NULL }
+  )
+})
 
 # Plotar o Sankey diagram da evolução temática
-plotThematicEvolution(evolucao$Nodes, evolucao$Edges)
+if (!is.null(evolucao)) {
+  plotThematicEvolution(evolucao$Nodes, evolucao$Edges)
+} else {
+  cat("Evolução temática não pôde ser calculada (dados insuficientes para dividir períodos).\n")
+}
 ```
 
 ```{r}
 #| label: evolucao-salvar
 
 # Salvar a evolução temática
-png(here("output", "figures", "11_evolucao_tematica.png"),
-    width = 14, height = 8, units = "in", res = 300)
-
-plotThematicEvolution(evolucao$Nodes, evolucao$Edges)
-
-dev.off()
-cat("Evolução temática salva em: output/figures/11_evolucao_tematica.png\n")
+if (exists("evolucao") && !is.null(evolucao)) {
+  png(here("output", "figures", "11_evolucao_tematica.png"),
+      width = 14, height = 8, units = "in", res = 300)
+  plotThematicEvolution(evolucao$Nodes, evolucao$Edges)
+  dev.off()
+  cat("Evolução temática salva em: output/figures/11_evolucao_tematica.png\n")
+} else {
+  cat("Evolução temática não disponível — gráfico não salvo.\n")
+}
 ```
 
 # Resumo da Análise de Keywords

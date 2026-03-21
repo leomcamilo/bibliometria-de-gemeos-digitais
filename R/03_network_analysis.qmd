@@ -186,7 +186,13 @@ de referências citadas (CR). Este bloco só executa se o campo estiver disponí
 
 if (cr_disponivel) {
   # --- CO-CITAÇÃO DE AUTORES ---
-  rede_cocit <- biblioNetwork(df, analysis = "co-citation", network = "authors")
+  rede_cocit <- tryCatch(
+    biblioNetwork(df, analysis = "co-citation", network = "authors"),
+    error = function(e) { cat("Erro na co-citação:", e$message, "\n"); NULL }
+  )
+}
+
+if (cr_disponivel && !is.null(rede_cocit)) {
   cat("Dimensões da matriz de co-citação:", dim(rede_cocit), "\n")
 
   set.seed(804)
@@ -213,33 +219,38 @@ if (cr_disponivel) {
   dev.off()
 
   # --- COUPLING BIBLIOGRÁFICO ---
-  rede_coupling <- biblioNetwork(df, analysis = "coupling", network = "authors")
-  cat("Dimensões da matriz de coupling:", dim(rede_coupling), "\n")
-
-  set.seed(804)
-  net_coupling <- networkPlot(
-    rede_coupling,
-    n = 30,
-    type = "fruchterman",
-    Title = "Acoplamento Bibliográfico entre Autores",
-    size.cex = TRUE,
-    label.cex = TRUE,
-    edgesize = 3,
-    edges.min = 5,
-    community.repulsion = 0.1
+  rede_coupling <- tryCatch(
+    biblioNetwork(df, analysis = "coupling", network = "authors"),
+    error = function(e) { cat("Erro no coupling:", e$message, "\n"); NULL }
   )
 
-  # Salvar
-  png(here("output", "figures", "08_coupling_autores.png"),
-      width = 10, height = 8, units = "in", res = 300)
-  set.seed(804)
-  networkPlot(rede_coupling, n = 30, type = "fruchterman",
-              Title = "Acoplamento Bibliográfico entre Autores",
-              size.cex = TRUE, label.cex = TRUE,
-              edgesize = 3, edges.min = 5, community.repulsion = 0.1)
-  dev.off()
+  if (!is.null(rede_coupling)) {
+    cat("Dimensões da matriz de coupling:", dim(rede_coupling), "\n")
 
-# Acrescentado pelo Claude para mostrar output no pdf
+    set.seed(804)
+    net_coupling <- networkPlot(
+      rede_coupling,
+      n = 30,
+      type = "fruchterman",
+      Title = "Acoplamento Bibliográfico entre Autores",
+      size.cex = TRUE,
+      label.cex = TRUE,
+      edgesize = 3,
+      edges.min = 5,
+      community.repulsion = 0.1
+    )
+
+    # Salvar
+    png(here("output", "figures", "08_coupling_autores.png"),
+        width = 10, height = 8, units = "in", res = 300)
+    set.seed(804)
+    networkPlot(rede_coupling, n = 30, type = "fruchterman",
+                Title = "Acoplamento Bibliográfico entre Autores",
+                size.cex = TRUE, label.cex = TRUE,
+                edgesize = 3, edges.min = 5, community.repulsion = 0.1)
+    dev.off()
+  }
+
 } else {
   cat("\n============================================================\n")
   cat("ANÁLISES NÃO REALIZADAS: Co-citação e Coupling Bibliográfico\n")

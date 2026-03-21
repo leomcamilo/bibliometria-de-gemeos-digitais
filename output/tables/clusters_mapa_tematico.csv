@@ -1,51 +1,73 @@
 groups,words,name_full,n,centrality,density,rcentrality,rdensity,name,color,freq
-1,"digital twin 233
-smart city 72
-urban planning 23
-machine learning 22
-simulation 17
-big data 12
-3d city model 10
-building information modeling (bim) 7
-built environment 7
-industry 4.0 7",digital twin,73,3.101135621608326,46.163430460106916,4,1,digital twin,#E41A1C80,599
-2,"digital twins 109
-smart cities 57
-internet of things 26
-sustainability 16
-iot 15
-bim 13
-building information modeling 7
-lidar 7
-ai 6
-gis 6",digital twins,66,3.4873063828416733,52.81668708507515,5,4,digital twins,#377EB880,405
-3,"artificial intelligence 31
-urban digital twin 14
-geographic information system 7
-remote sensing 5
-standards 5
-traffic simulation 5
-edge computing 4
-living lab 4
-platform 4
-sustainable urban development 4",artificial intelligence,36,1.9013473466969173,50.09205922512374,2,3,artificial intelligence,#4DAF4A80,151
-4,"deep learning 27
-semantic segmentation 9
-city digital twin 7
-digitalization 7
-urban digital twins 7
-point cloud 5
-3d reconstruction 4
-point clouds 4
-3d city models 3
-attention mechanism 3",deep learning,31,0.7664016539016538,47.44296862512425,1,2,deep learning,#984EA380,124
-5,"virtual reality 18
-blockchain 16
-digital twin (dt) 15
-metaverse 15
-internet of things (iot) 12
-security 8
-5g 7
-climate change 7
-artificial intelligence (ai) 6
-augmented reality (ar) 5",virtual reality,42,2.284393139200124,56.35916241496594,3,5,virtual reality,#FF7F0080,200
+1,"digital twin 67
+smart city 27
+urban planning 16
+urban 8
+simulation 6
+urban management 6
+decision support 5
+urban governance 5
+built environment 4
+iot 4",digital twin,31,3.7410085718641626,61.48271950433016,9,7,digital twin,#E41A1C80,195
+2,"digital twins 22
+smart cities 19
+internet of things 4
+ontology 3
+stakeholder engagement 3
+climate change 2
+learning 2
+machine 2
+open data 2
+quality of life 2",digital twins,13,1.0912365047233472,54.007177033492816,6,5,digital twins,#377EB880,67
+3,"sustainability 13
+urban digital twin 12
+data 5
+analysis 4
+cities 4
+energy transition 3
+smart 3
+climate neutrality 2
+technology 2
+urban climate 2",sustainability,11,1.9067841880341874,45.85761460761461,7,1,sustainability,#4DAF4A80,52
+4,"machine learning 9
+artificial intelligence 6
+planning 4
+bibliometric analysis 3
+decision-making 3
+deep learning 3
+participatory planning 3
+decision support systems 2
+digital twin technology 2
+human thermal comfort 2",machine learning,11,2.295370370370371,56.48148148148147,8,6,machine learning,#984EA380,39
+5,"urban digital twins 8
+citizen participation 4
+digitalization 3
+5g 2
+city planning 2
+sustainable smart cities 2",urban digital twins,6,0.26041666666666663,49.65277777777778,3,2,urban digital twins,#FF7F0080,21
+6,"metaverse 6
+internet of things (iot) 4
+architecture 3
+artificial 3
+gis 3
+digital twin city 2
+intelligence 2",metaverse,7,0.8666666666666666,53.968253968253954,5,4,metaverse,#A6562880,23
+7,"sustainable development 5
+circular economy 4
+cultural heritage 3
+life cycle assessment 3
+urban regeneration 3
+china 2
+graph neural networks 2",sustainable development,7,0.7583333333333334,53.888888888888886,4,3,sustainable development,#F781BF80,22
+8,"digital twin (dt) 3
+federated learning 2
+air quality 2
+autonomous vehicles 2
+intelligent transportation systems 2
+making 2
+resource 2
+traffic congestion 2
+traffic management 2",digital twin (dt),9,0.1111111111111111,76.85185185185188,1,9,digital twin (dt),#99999980,19
+9,"campus 2
+geographic information system 2
+living lab 2",campus,3,0.25,75,2,8,campus,#66C2A580,6

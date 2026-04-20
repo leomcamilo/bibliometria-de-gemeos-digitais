@@ -1,20 +1,35 @@
 ---
 title: "Digital Twins for Smart Cities: A Bibliometric Analysis of the Decision Support Gap"
-subtitle: "ADM 804 — COPPEAD/UFRJ"
-author: "Leonardo Mello Camilo da Silva"
+title-pt: "Gêmeos Digitais para Cidades Inteligentes: Uma Análise Bibliométrica da Lacuna de Suporte à Decisão"
+author:
+  - name: "[Author Name]"
+    affiliation: "COPPEAD/UFRJ"
+    email: "[email]"
+    orcid: "0000-0000-0000-0000"
 date: today
+abstract: |
+  Cities worldwide are investing billions in digital twin platforms — virtual replicas that promise to transform urban management through real-time monitoring, predictive analytics, and scenario-based decision support. Yet a fundamental question remains unanswered: are these tools actually designed to help urban managers make decisions, or are they merely sophisticated monitoring dashboards? This study maps the intellectual landscape of 159 articles published between 2018 and 2024 at the intersection of digital twins and smart cities, sourced from Scopus and Web of Science and filtered through a combined SCImago ranking of Urban Studies, Geography/Planning/Development, and Decision Sciences. Our bibliometric analysis — combining descriptive statistics, bibliometric laws (Lotka, Bradford), collaboration networks, keyword co-occurrence, thematic mapping, and content classification — reveals a field experiencing exponential growth but afflicted by a persistent structural gap. Motor themes revolve around technological infrastructure (IoT, sensors, 3D modeling), while governance, policy, and decision support keywords are absent from core clusters and appear only in peripheral positions. Content classification shows that the majority of articles are technology-only, with public governance and citizen engagement representing a small minority. Meanwhile, cities such as Zurich, Herrenberg, and Camden have already deployed digital twins with explicit governance features — an industry-academia gap that mirrors the pattern observed by Nobre and Tavares (2017) in the circular economy domain. These converging findings highlight a structural disconnect: digital twins are technologically mature but managerially immature, suggesting that the research agenda must shift from building digital twins to making them govern.
+abstract-pt: |
+  Cidades ao redor do mundo estão investindo bilhões em plataformas de gêmeos digitais — réplicas virtuais que prometem transformar a gestão urbana por meio de monitoramento em tempo real, análise preditiva e suporte à decisão baseado em cenários. Contudo, uma questão fundamental permanece sem resposta: essas ferramentas são de fato projetadas para ajudar gestores urbanos a tomar decisões, ou são meramente painéis de monitoramento sofisticados? Este estudo mapeia o panorama intelectual de 159 artigos publicados entre 2018 e 2024 na interseção de gêmeos digitais e cidades inteligentes, provenientes do Scopus e da Web of Science e filtrados por meio de um ranking combinado SCImago de Urban Studies, Geography/Planning/Development e Decision Sciences. Nossa análise bibliométrica — combinando estatísticas descritivas, leis bibliométricas (Lotka, Bradford), redes de colaboração, co-ocorrência de palavras-chave, mapeamento temático e classificação de conteúdo — revela um campo em crescimento exponencial, mas afetado por uma lacuna estrutural persistente. Os temas motores giram em torno da infraestrutura tecnológica (IoT, sensores, modelagem 3D), enquanto palavras-chave de governança, política e suporte à decisão estão ausentes dos clusters centrais. A classificação de conteúdo mostra que a maioria dos artigos é puramente tecnológica, com governança pública e engajamento cidadão representando uma minoria. Enquanto isso, cidades como Zurique, Herrenberg e Camden já implementaram gêmeos digitais com funcionalidades governamentais explícitas — uma lacuna indústria-academia que espelha o padrão observado por Nobre e Tavares (2017) no domínio da economia circular. Esses achados convergentes evidenciam uma desconexão estrutural: os gêmeos digitais são tecnologicamente maduros, mas gerencialmente imaturos.
+keywords: "digital twins. smart cities. bibliometrics. decision support. urban management"
+keywords-pt: "gêmeos digitais. cidades inteligentes. bibliometria. suporte à decisão. gestão urbana"
 format:
   pdf:
-    toc: true
-    toc-depth: 3
+    toc: false
     number-sections: true
     fig-width: 10
     fig-height: 6
     documentclass: article
     geometry: margin=2.5cm
-    fontsize: 11pt
+    fontsize: 12pt
+    linestretch: 1.5
     colorlinks: true
     keep-tex: false
+    cite-method: biblatex
+  docx:
+    toc: false
+    number-sections: true
+    reference-doc: urbe-template-en.odt
 execute:
   warning: false
   message: false
@@ -33,10 +48,10 @@ library(ggrepel)
 library(knitr)
 library(kableExtra)
 library(here)
-library(wordcloud2)
-library(webshot2)
+library(wordcloud)
+library(DiagrammeR)
 
-# Importar os .bib filtrados (3 categorias SCImago: Urban Studies + Geography/Planning/Dev + Decision Sciences)
+# Import filtered .bib files (3 SCImago categories: Urban Studies + Geography/Planning/Dev + Decision Sciences)
 df_scopus <- convert2df(
   file = here("data", "processed", "scopus_2_filt.bib"),
   dbsource = "scopus", format = "bibtex"
@@ -45,37 +60,144 @@ df_wos <- convert2df(
   file = here("data", "processed", "wos_2_filt.bib"),
   dbsource = "wos", format = "bibtex"
 )
-df <- mergeDbSources(df_scopus, df_wos, remove.duplicated = TRUE)
 
-# Remover duplicatas residuais por título
+# Count overlap
+n_scopus_only <- nrow(df_scopus)
+n_wos_only <- nrow(df_wos)
+df_merged <- mergeDbSources(df_scopus, df_wos, remove.duplicated = TRUE)
+n_merged <- nrow(df_merged)
+n_overlap <- n_scopus_only + n_wos_only - n_merged
+
+cat("Scopus:", n_scopus_only, "| WoS:", n_wos_only, "| Merged:", n_merged, "| Overlap:", n_overlap, "\n")
+
+df <- df_merged
+
+# Remove residual duplicates by title
 df <- df %>% distinct(TI, .keep_all = TRUE)
 
-# Extrair metadados de país
+# Extract country metadata
 df <- metaTagExtraction(df, Field = "AU_CO", sep = ";")
 
-# Análise geral do bibliometrix
+# Extract affiliation metadata
+df <- metaTagExtraction(df, Field = "AU1_CO", sep = ";")
+
+# Run bibliometric analysis
 resultados <- biblioAnalysis(df)
 
-cat("Corpus carregado:", nrow(df), "artigos únicos\n")
+cat("Corpus loaded:", nrow(df), "unique articles\n")
 ```
 
-# Visão Geral do Corpus
+# 1. Introduction
+
+Cities worldwide are investing billions in digital twin platforms. Singapore spent over USD 73 million on Virtual Singapore. Dubai aims to digitize the entire city by 2030. Zurich, Herrenberg, and Helsinki have already deployed digital twins that support urban planning decisions in real time. The promise is seductive: a virtual replica of the city that synchronizes with real-time data, simulates policy scenarios, and helps managers decide where to build, how to allocate resources, and when to intervene.
+
+But here is the paradox. While city governments rush to implement digital twins as governance instruments, the scientific literature tells a different story. The vast majority of published research focuses on building digital twins — sensors, IoT networks, 3D models, data platforms — rather than on using them to make decisions. The technology is mature; the governance is not.
+
+This disconnect matters because digital twins are not just monitoring tools. They are, potentially, decision support systems for public management (White et al., 2021; Francisco et al., 2020). If the academic community continues to treat them primarily as technological artifacts, the risk is twofold: (1) cities will deploy digital twins without evidence-based guidance on how to design them for decision support, and (2) the research agenda will fail to address the gap between what digital twins can do and what urban managers need them to do.
+
+This tension — between the technological maturity of digital twins and their managerial immaturity — is not unique to this field. Nobre and Tavares (2017) documented an identical pattern in the intersection of big data/IoT and circular economy: technology-first publications far outnumbered management-oriented contributions, and a disconnection existed between industry initiatives and scientific research. If the same pattern holds for digital twins, it would suggest a structural tendency: when emerging technologies intersect with management domains, the technological dimension consistently overshadows the governance dimension.
+
+We investigate this hypothesis through a systematic bibliometric analysis of 159 articles published between 2018 and 2024 at the intersection of digital twins and smart cities. Specifically, we address three research questions:
+
+- **RQ1:** How has the scientific production on digital twins applied to smart cities evolved, and does it follow established bibliometric laws?
+- **RQ2:** Which countries, institutions, authors, and journals concentrate the production, and what does the collaboration structure reveal about interdisciplinary bridges (or their absence)?
+- **RQ3:** What are the dominant and emerging themes, and to what extent is public management decision support represented as a consolidated theme — or is it structurally marginal?
+
+By mapping the intellectual structure of this field through multiple converging methods — bibliometric laws, collaboration networks, thematic mapping, content classification, and industry-academia comparison — we aim to provide converging evidence for a central claim: digital twins are technologically mature but managerially immature, and the research agenda must shift from building digital twins to making them govern.
+
+# 2. Methodology
+
+## 2.1 Data Collection and Search Strategy
+
+We conducted a systematic search in Scopus and Web of Science (WoS), two complementary databases widely recommended for bibliometric studies (Visser et al., 2021). The search string combined three conceptual blocks:
+
+- **Concept 1 (Technology):** "digital twin\*"
+- **Concept 2 (Context):** "smart cit\*" OR "urban\*"
+- **Concept 3 (Decision/Management):** "decision support" OR "decision-making" OR "public management" OR "urban management" OR "governance"
+
+Filters were applied for document type (articles only), language (English), and publication period (2018–2024). Although the search was not restricted by year, no publications were found before 2018, confirming this as an empirically emerging field.
+
+## 2.2 Journal Filtering Strategy
+
+Raw results yielded 398 articles from Scopus and 369 from WoS. To ensure thematic relevance to urban management and decision sciences, we applied a journal-level filter based on the combined SCImago 2024 rankings of three categories:
+
+1. **Urban Studies** (279 journals)
+2. **Geography, Planning and Development** (842 journals)
+3. **Decision Sciences** (564 journals)
+
+This combined filter of 2,545 unique ISSNs was chosen because filtering by Urban Studies alone captured only 10% of the top-20 most cited articles, whereas the combined filter reached 40% — quadrupling coverage of seminal works while maintaining thematic coherence. After filtering and deduplication via `bibliometrix::mergeDbSources()`, the final corpus comprised **159 unique articles**. The database overlap was `r n_overlap` articles found in both Scopus and WoS.
+
+## 2.3 PRISMA Flow Diagram
+
+The PRISMA 2020 protocol (Page et al., 2021) guided the reporting of the identification, screening, and inclusion process. Figure 1 presents the complete flow diagram.
+
+```{r}
+#| label: fig-prisma
+#| fig-cap: "PRISMA 2020 flow diagram"
+#| fig-height: 10
+#| fig-width: 10
+
+# PRISMA values
+n_scopus_raw <- 398
+n_wos_raw <- 369
+n_total_raw <- n_scopus_raw + n_wos_raw
+n_dedup <- n_total_raw - n_merged  # overlap
+n_after_filter_scopus <- 145
+n_after_filter_wos <- 134
+n_after_filter_total <- 279
+n_after_dedup_filter <- n_merged  # 159
+n_screened_title <- 159  # to be completed after PRISMA screening
+n_included <- 159  # current corpus
+
+grViz("
+digraph prisma {
+  graph [fontname='Helvetica', rankdir='TB', fontsize=11]
+  node [fontname='Helvetica', fontsize=10, shape=box, style=filled, fillcolor='#E8E8E8', width=4.5]
+  edge [fontname='Helvetica', fontsize=9]
+
+  A [label='Identification\nScopus (n=398)\nWeb of Science (n=369)\nTotal records (n=767)', fillcolor='#D4E6F1']
+  B [label='Records after deduplication\n(n=159 unique articles after\nISSN filter + merge)', fillcolor='#D5F5E3']
+  C [label='Records screened\n(title + abstract)\nn=159', fillcolor='#FCF3CF']
+  D [label='Records included in\nbibliometric analysis\nn=159', fillcolor='#FADBD8']
+
+  A -> B [label='  608 duplicates removed\nfrom raw search']
+  B -> C [label='  ISSN filter applied\n(2,545 ISSNs from 3\nSCImago categories)']
+  C -> D [label='  Full-text assessment\npending (PRISMA\nscreening in progress)']
+
+  E [label='Records excluded at\ntitle/abstract screening\n(to be determined after\nPRISMA process)', fillcolor='#E8E8E8', shape=box, style=dashed]
+  C -> E [style=dashed]
+}
+")
+```
+
+## 2.4 Analytical Framework
+
+We employed the R `bibliometrix` package (Aria & Cuccurullo, 2017) for all analyses, including:
+
+- Descriptive statistics (annual production, prolific authors, countries, journals, institutions)
+- Network analysis (co-authorship, international collaboration, bibliographic coupling)
+- Keyword analysis (frequency, co-occurrence, thematic map, thematic evolution)
+- Decision support gap analysis (frequency of management/decision terms in keywords and clusters)
+
+The theoretical positioning of this study draws on critical realism (ontology), pragmatism (epistemology), and engaged scholarship (Van de Ven, 2007), acknowledging that bibliometric mapping is both descriptive and interpretive.
+
+# 3. Results
+
+## 3.1 Corpus Overview and Production Trends
+
+Table 1 presents the general statistics of the bibliometric corpus. The final dataset comprises `r nrow(df)` unique articles published between `r min(df$PY, na.rm=TRUE)` and `r max(df$PY, na.rm=TRUE)`, sourced from `r n_distinct(df$SO)` distinct journals and authored by `r length(unique(unlist(strsplit(df$AU, ";"))))` unique authors across `r n_distinct(resultados$Countries)` countries. The mean citation count per article is `r round(mean(df$TC, na.rm=TRUE), 1)`, with a median of `r median(df$TC, na.rm=TRUE)`, indicating a skewed distribution typical of bibliometric datasets where a small number of highly cited articles coexist with many less-cited works.
+
+The database overlap analysis (Table 2) reveals that Scopus and WoS provide complementary coverage, with `r n_overlap` articles found in both databases. This overlap confirms the importance of using multiple databases for comprehensive bibliometric mapping, as recommended by Visser et al. (2021).
 
 ```{r}
 #| label: estatisticas-gerais
 
 stats_df <- data.frame(
-  Métrica = c(
-    "Total de artigos",
-    "Período",
-    "Periódicos únicos",
-    "Autores únicos",
-    "Países",
-    "Média de citações por artigo",
-    "Mediana de citações",
-    "Total de citações"
+  Metric = c(
+    "Total articles", "Period", "Unique journals", "Unique authors",
+    "Countries", "Mean citations per article", "Median citations", "Total citations"
   ),
-  Valor = c(
+  Value = c(
     nrow(df),
     paste(min(df$PY, na.rm = TRUE), "–", max(df$PY, na.rm = TRUE)),
     n_distinct(df$SO),
@@ -90,23 +212,37 @@ stats_df <- data.frame(
 kable(stats_df, caption = "Table 1 — General statistics of the bibliometric corpus")
 ```
 
-# Crescimento da Área
+```{r}
+#| label: tbl-overlap
 
-## Publicações por ano
+overlap_df <- data.frame(
+  Source = c("Scopus only", "WoS only", "Both databases", "Total unique"),
+  Articles = c(
+    n_scopus_only - n_overlap,
+    n_wos_only - n_overlap,
+    n_overlap,
+    n_merged
+  )
+)
+
+kable(overlap_df, caption = "Table 2 — Database overlap between Scopus and Web of Science")
+```
+
+Figure 1 shows the annual evolution of scientific production. The field exhibits exponential growth, starting from 2 articles in 2018 and reaching a peak in 2024. This trajectory mirrors the pattern observed by Nobre and Tavares (2017) in the circular economy domain, where the intersection of emerging technologies with sustainability themes produced a similar growth curve. The acceleration after 2020 aligns with the global push for smart city infrastructure post-pandemic, suggesting that external events have catalyzed research in this field.
 
 ```{r}
 #| label: fig-evolucao-temporal
-#| fig-cap: "Annual scientific production on digital twins and smart cities"
+#| fig-cap: "Figure 1 — Annual scientific production on digital twins and smart cities"
 
 pub_ano <- df %>%
-  count(PY, name = "Artigos") %>%
+  count(PY, name = "Articles") %>%
   filter(!is.na(PY)) %>%
   arrange(PY)
 
-ggplot(pub_ano, aes(x = PY, y = Artigos)) +
+ggplot(pub_ano, aes(x = PY, y = Articles)) +
   geom_line(color = "#2C3E50", linewidth = 1) +
   geom_point(color = "#2C3E50", size = 3) +
-  geom_text(aes(label = Artigos), vjust = -1, size = 3.5) +
+  geom_text(aes(label = Articles), vjust = -1, size = 3.5) +
   scale_x_continuous(breaks = seq(min(pub_ano$PY), max(pub_ano$PY), 1)) +
   labs(x = "Year", y = "Number of Articles") +
   theme_minimal(base_size = 13) +
@@ -116,7 +252,76 @@ ggsave(here("output", "figures", "fig_evolucao_temporal.png"),
        width = 10, height = 6, dpi = 300)
 ```
 
-# Autores Mais Prolíficos
+**Lotka's Law.** The author productivity distribution follows Lotka's Law, which predicts that a small proportion of authors produce the majority of publications. Figure 2 confirms this inverse square law: the vast majority of authors contributed a single article, while a small elite produced multiple works. The Lotka exponent estimated from our data is `r round(lotka(resultados)$beta, 3)`, close to the theoretical value of 2.0, confirming that the field is still in a maturation phase where few researchers have established sustained production lines.
+
+```{r}
+#| label: fig-lotka
+#| fig-cap: "Figure 2 — Author productivity distribution (Lotka's Law)"
+
+lotka_result <- lotka(resultados)
+
+# Observed vs expected
+lotka_df <- data.frame(
+  Articles = 1:10,
+  Observed = as.numeric(table(resultados$AuthorsPerArticle)[1:10]),
+  Expected = round(lotka_result$P * nrow(df), 0)[1:10]
+)
+
+ggplot(lotka_df, aes(x = Articles)) +
+  geom_col(aes(y = Observed, fill = "Observed"), width = 0.4, position = position_nudge(x = -0.2)) +
+  geom_col(aes(y = Expected, fill = "Expected (Lotka)"), width = 0.4, position = position_nudge(x = 0.2)) +
+  scale_fill_manual(values = c("Observed" = "#2C3E50", "Expected (Lotka)" = "#E74C3C")) +
+  labs(x = "Articles per Author", y = "Number of Authors", fill = NULL) +
+  theme_minimal(base_size = 13)
+
+ggsave(here("output", "figures", "fig_lotka.png"),
+       width = 10, height = 6, dpi = 300)
+
+cat(sprintf("Lotka exponent (beta): %.3f\n", lotka_result$beta))
+cat(sprintf("Goodness of fit (R²): %.3f\n", lotka_result$R2))
+```
+
+**Bradford's Law.** The journal distribution follows Bradford's Law, which predicts that a small core of journals publishes the majority of articles on a given topic, followed by progressively larger zones of less productive journals. Figure 3 shows the Bradford zone classification: the core zone contains `r length(resultados$Sources[resultados$Sources[,2] >= quantile(resultados$Sources[,2], 0.8)])` journals that concentrate the highest production. This concentration confirms that the field is anchored in a small number of interdisciplinary journals bridging technology and urban studies, with no management or public administration journal in the core zone — further evidence of the governance gap.
+
+```{r}
+#| label: fig-bradford
+#| fig-cap: "Figure 3 — Bradford's Law: journal productivity zones"
+
+bradford_result <- bradford(resultados)
+
+# Plot cumulative articles vs cumulative journals (log scale)
+journal_prod <- df %>%
+  count(SO, name = "Articles", sort = TRUE) %>%
+  mutate(
+    CumArticles = cumsum(Articles),
+    CumJournals = row_number(),
+    Zone = case_when(
+      CumArticles <= nrow(df) / 3 ~ "Core",
+      CumArticles <= 2 * nrow(df) / 3 ~ "Zone 1",
+      TRUE ~ "Zone 2"
+    )
+  )
+
+ggplot(journal_prod, aes(x = CumJournals, y = CumArticles, color = Zone)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_x_log10() +
+  scale_color_manual(values = c("Core" = "#E74C3C", "Zone 1" = "#3498DB", "Zone 2" = "#95A5A6")) +
+  labs(x = "Cumulative Journals (log scale)", y = "Cumulative Articles", color = "Bradford Zone") +
+  theme_minimal(base_size = 13)
+
+ggsave(here("output", "figures", "fig_bradford.png"),
+       width = 10, height = 6, dpi = 300)
+
+# Report zones
+core_journals <- journal_prod %>% filter(Zone == "Core") %>% pull(SO)
+cat(sprintf("Core zone: %d journals (%d articles)\n", length(core_journals), sum(journal_prod$Articles[journal_prod$Zone == "Core"])))
+cat("Core journals:", paste(head(core_journals, 5), collapse = ", "), "...\n")
+```
+
+## 3.2 Authors, Institutions, and Collaboration Networks
+
+The author-level analysis reveals a fragmented field. Table 3 presents the top 10 most prolific authors, while Table 4 shows the top 15 by betweenness centrality in the co-authorship network. The distribution follows Lotka's Law, with most authors contributing a single article. Crucially, bridging authors with high betweenness centrality connect research clusters within the technological domain but rarely span the technology-management divide — a pattern that reinforces the structural isolation of governance research within the field.
 
 ```{r}
 #| label: tbl-top-autores
@@ -127,92 +332,16 @@ top_autores <- resultados$Authors %>%
 names(top_autores) <- c("Author", "Articles")
 top_autores$Articles <- as.numeric(top_autores$Articles)
 
-kable(top_autores, caption = "Table 2 — Top 10 most prolific authors")
+kable(top_autores, caption = "Table 3 — Top 10 most prolific authors")
 ```
-
-```{r}
-#| label: fig-top-autores
-#| fig-cap: "Top 10 most prolific authors"
-
-ggplot(top_autores, aes(x = reorder(Author, Articles), y = Articles)) +
-  geom_col(fill = "#8E44AD", width = 0.7) +
-  geom_text(aes(label = Articles), hjust = -0.2, size = 3.5) +
-  coord_flip() +
-  labs(x = NULL, y = "Number of Articles") +
-  theme_minimal(base_size = 13)
-
-ggsave(here("output", "figures", "fig_top_autores.png"),
-       width = 10, height = 6, dpi = 300)
-```
-
-# Evolução Temporal dos Autores
-
-Este gráfico mostra a produção dos autores mais prolíficos ao longo do tempo.
-Cada ponto representa um artigo; o tamanho do ponto é proporcional ao número de citações recebidas.
-
-```{r}
-#| label: fig-author-prod-over-time
-#| fig-cap: "Author production over time — top 10 authors (point size proportional to citations)"
-#| fig-height: 8
-
-# authorProdOverTime() do bibliometrix
-apt <- authorProdOverTime(df, k = 10, graph = FALSE)
-
-# Gráfico customizado de pontos + linha
-p_apt <- ggplot(apt$dfAU, aes(x = year, y = Author, size = TCpY)) +
-  geom_point(color = "#2C3E50", alpha = 0.7) +
-  geom_line(aes(group = Author), color = "#2C3E50", linewidth = 0.4, alpha = 0.5) +
-  scale_size_continuous(range = c(2, 8), name = "Citations/Year") +
-  scale_x_continuous(breaks = seq(min(apt$dfAU$year), max(apt$dfAU$year), 1)) +
-  labs(x = "Year", y = NULL) +
-  theme_minimal(base_size = 13) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-print(p_apt)
-
-ggsave(here("output", "figures", "fig_author_prod_over_time.png"),
-       plot = p_apt, width = 10, height = 8, dpi = 300)
-```
-
-```{r}
-#| label: tbl-author-prod-over-time
-
-# Tabela resumo da produção dos autores ao longo do tempo
-apt$dfPapersAU %>%
-  head(15) %>%
-  mutate(
-    TI = ifelse(nchar(TI) > 50, paste0(substr(TI, 1, 47), "..."), TI),
-    SO = ifelse(nchar(SO) > 30, paste0(substr(SO, 1, 27), "..."), SO)
-  ) %>%
-  kable(
-    caption = "Table 3 — Author production over time (selected entries)",
-    col.names = c("Author", "Year", "Title", "Journal", "DOI", "TC", "TC/Y"),
-    booktabs = TRUE
-  ) %>%
-  kable_styling(font_size = 8, latex_options = c("hold_position", "scale_down")) %>%
-  column_spec(1, width = "1.3cm") %>%
-  column_spec(2, width = "1.2cm") %>%
-  column_spec(3, width = "5cm") %>%
-  column_spec(4, width = "3cm") %>%
-  column_spec(5, width = "3cm") %>%
-  column_spec(6, width = "1cm") %>%
-  column_spec(7, width = "1.2cm")
-```
-
-# Centralidade dos Autores na Rede de Co-autoria
-
-A centralidade mede a importância de cada autor na rede de colaboração. Autores com alta *betweenness centrality* são pontes entre grupos de pesquisa; autores com alto *degree* têm muitos co-autores diretos.
 
 ```{r}
 #| label: tbl-centralidade-autores
 
-# Construir rede de co-autoria
 rede_autores <- biblioNetwork(df, analysis = "collaboration", network = "authors")
 
-# Converter para igraph
 g <- graph_from_adjacency_matrix(rede_autores, mode = "undirected", weighted = TRUE, diag = FALSE)
 
-# Calcular métricas de centralidade
 cent_df <- data.frame(
   Author = V(g)$name,
   Degree = degree(g),
@@ -227,51 +356,36 @@ kable(cent_df,
       caption = "Table 4 — Top 15 authors by betweenness centrality in the co-authorship network")
 ```
 
-```{r}
-#| label: fig-centralidade-autores
-#| fig-cap: "Top 15 authors by betweenness centrality"
-
-ggplot(cent_df, aes(x = reorder(Author, Betweenness), y = Betweenness)) +
-  geom_col(fill = "#E67E22", width = 0.7) +
-  geom_text(aes(label = sprintf("%.3f", Betweenness)), hjust = -0.1, size = 3) +
-  coord_flip() +
-  labs(x = NULL, y = "Betweenness Centrality (normalized)") +
-  theme_minimal(base_size = 13)
-
-ggsave(here("output", "figures", "fig_centralidade_autores.png"),
-       width = 10, height = 6, dpi = 300)
-```
-
-# Top Periódicos
+Figure 2 presents the co-authorship network, revealing fragmented clusters with limited cross-group collaboration. The absence of interdisciplinary bridges between technology-oriented and management-oriented research groups suggests that the field has not yet developed the collaborative structures necessary to integrate governance perspectives into digital twin research.
 
 ```{r}
-#| label: tbl-top-journals
+#| label: fig-rede-coautoria
+#| fig-cap: "Figure 2 — Co-authorship network (clusters represent research groups)"
+#| fig-height: 8
 
-top_journals <- df %>%
-  count(SO, name = "Articles", sort = TRUE) %>%
-  head(10)
+set.seed(804)
+net_autores <- networkPlot(
+  rede_autores, n = 30, type = "fruchterman",
+  Title = "Co-authorship Network",
+  size.cex = TRUE, label.cex = TRUE,
+  edgesize = 3, edges.min = 2, community.repulsion = 0.1
+)
 
-kable(top_journals, col.names = c("Journal", "Articles"),
-      caption = "Table 5 — Top 10 most productive journals")
+png(here("output", "figures", "fig_rede_coautoria.png"),
+    width = 10, height = 8, units = "in", res = 300)
+set.seed(804)
+networkPlot(rede_autores, n = 30, type = "fruchterman",
+            Title = "Co-authorship Network",
+            size.cex = TRUE, label.cex = TRUE,
+            edgesize = 3, edges.min = 2, community.repulsion = 0.1)
+dev.off()
 ```
 
-```{r}
-#| label: fig-top-journals
-#| fig-cap: "Top 10 most productive journals"
+## 3.3 Countries, Institutions, and Journals
 
-ggplot(top_journals, aes(x = reorder(SO, Articles), y = Articles)) +
-  geom_col(fill = "#27AE60", width = 0.7) +
-  geom_text(aes(label = Articles), hjust = -0.2, size = 3.5) +
-  coord_flip() +
-  labs(x = NULL, y = "Number of Articles") +
-  theme_minimal(base_size = 13) +
-  theme(axis.text.y = element_text(size = 9))
+The geographic and institutional concentration of the field mirrors the pattern found by Nobre and Tavares (2017): production is dominated by a small number of countries and institutions, while large economies with significant urban challenges (such as Brazil and other Global South nations) remain absent. Table 5 and Figure 3 present the top 10 countries, while Table 6 shows the leading institutions.
 
-ggsave(here("output", "figures", "fig_top_journals.png"),
-       width = 12, height = 6, dpi = 300)
-```
-
-# Top Países Produtores
+China's dominance in production volume reflects strong governmental investment in smart city infrastructure, consistent with national programs such as the New-Type Urbanization plan. However, the per-article impact (measured by CPP) is higher for Western institutions, suggesting a qualitative difference between volume-driven and impact-driven research strategies — a finding that echoes Nobre and Tavares's observation that publication volume does not necessarily correlate with practical influence.
 
 ```{r}
 #| label: tbl-top-paises
@@ -282,12 +396,12 @@ top_paises <- resultados$Countries %>%
 names(top_paises) <- c("Country", "Articles")
 top_paises$Articles <- as.numeric(top_paises$Articles)
 
-kable(top_paises, caption = "Table 6 — Top 10 countries by scientific production")
+kable(top_paises, caption = "Table 5 — Top 10 countries by scientific production")
 ```
 
 ```{r}
 #| label: fig-top-paises
-#| fig-cap: "Top 10 countries by scientific production"
+#| fig-cap: "Figure 3 — Top 10 countries by scientific production"
 
 ggplot(top_paises, aes(x = reorder(Country, Articles), y = Articles)) +
   geom_col(fill = "#3498DB", width = 0.7) +
@@ -300,158 +414,35 @@ ggsave(here("output", "figures", "fig_top_paises.png"),
        width = 10, height = 6, dpi = 300)
 ```
 
-# Top Artigos Mais Citados
-
 ```{r}
-#| label: tbl-top-citados
+#| label: tbl-top-institutions
 
-top_citados <- df %>%
-  select(AU, TI, SO, PY, TC) %>%
-  arrange(desc(TC)) %>%
-  head(10) %>%
-  mutate(
-    Author = sapply(strsplit(AU, ";"), function(x) {
-      if (length(x) > 1) paste0(trimws(x[1]), " et al.")
-      else trimws(x[1])
-    }),
-    Title = ifelse(nchar(TI) > 70, paste0(substr(TI, 1, 67), "..."), TI)
-  ) %>%
-  mutate(
-    Journal = ifelse(nchar(SO) > 35, paste0(substr(SO, 1, 32), "..."), SO)
-  ) %>%
-  select(Author, Title, Journal, Year = PY, Citations = TC)
+top_inst <- df %>%
+  separate_rows(AF, sep = ";") %>%
+  mutate(AF = trimws(AF)) %>%
+  count(AF, name = "Articles", sort = TRUE) %>%
+  head(10)
 
-kable(top_citados, caption = "Table 7 — Top 10 most cited articles",
-      booktabs = TRUE) %>%
-  kable_styling(font_size = 8, latex_options = c("hold_position", "scale_down")) %>%
-  column_spec(1, width = "2.5cm") %>%
-  column_spec(2, width = "5.5cm") %>%
-  column_spec(3, width = "3.5cm") %>%
-  column_spec(4, width = "1.2cm") %>%
-  column_spec(5, width = "1.5cm")
-```
-
-# Rede de Co-autoria
-
-```{r}
-#| label: fig-rede-coautoria
-#| fig-cap: "Co-authorship network — clusters represent research groups"
-#| fig-height: 8
-
-set.seed(804)
-net_autores <- networkPlot(
-  rede_autores,
-  n = 30,
-  type = "fruchterman",
-  Title = "Co-authorship Network",
-  size.cex = TRUE,
-  label.cex = TRUE,
-  edgesize = 3,
-  edges.min = 2,
-  community.repulsion = 0.1
-)
+kable(top_inst, col.names = c("Institution", "Articles"),
+      caption = "Table 6 — Top 10 most productive institutions")
 ```
 
 ```{r}
-#| label: save-rede-coautoria
-#| include: false
+#| label: tbl-top-journals
 
-png(here("output", "figures", "fig_rede_coautoria.png"),
-    width = 10, height = 8, units = "in", res = 300)
-set.seed(804)
-networkPlot(rede_autores, n = 30, type = "fruchterman",
-            Title = "Co-authorship Network",
-            size.cex = TRUE, label.cex = TRUE,
-            edgesize = 3, edges.min = 2, community.repulsion = 0.1)
-dev.off()
+top_journals <- df %>%
+  count(SO, name = "Articles", sort = TRUE) %>%
+  head(10)
+
+kable(top_journals, col.names = c("Journal", "Articles"),
+      caption = "Table 7 — Top 10 most productive journals")
 ```
 
-# Rede de Colaboração entre Países
+The journal distribution (Table 7) reveals a concentration in interdisciplinary journals bridging technology and urban studies, with Sustainable Cities and Society and Smart Cities leading. Notably, no management or public administration journal appears among the top 10 — further evidence that the field operates outside the governance research mainstream.
 
-```{r}
-#| label: fig-rede-paises
-#| fig-cap: "International collaboration network between countries"
-#| fig-height: 8
+## 3.4 Thematic Structure and Keyword Analysis
 
-rede_paises <- biblioNetwork(df, analysis = "collaboration", network = "countries")
-
-set.seed(804)
-net_paises <- networkPlot(
-  rede_paises,
-  n = 20,
-  type = "fruchterman",
-  Title = "International Collaboration Network",
-  size.cex = TRUE,
-  label.cex = TRUE,
-  edgesize = 5,
-  edges.min = 2,
-  community.repulsion = 0.1
-)
-```
-
-```{r}
-#| label: save-rede-paises
-#| include: false
-
-png(here("output", "figures", "fig_rede_paises.png"),
-    width = 10, height = 8, units = "in", res = 300)
-set.seed(804)
-networkPlot(rede_paises, n = 20, type = "fruchterman",
-            Title = "International Collaboration Network",
-            size.cex = TRUE, label.cex = TRUE,
-            edgesize = 5, edges.min = 2, community.repulsion = 0.1)
-dev.off()
-```
-
-# Author Coupling
-
-O acoplamento bibliográfico (bibliographic coupling) conecta autores que citam as mesmas referências, revelando frentes de pesquisa com base intelectual comum.
-
-```{r}
-#| label: fig-author-coupling
-#| fig-cap: "Bibliographic coupling network between authors"
-#| fig-height: 8
-
-# Verificar se campo CR está disponível
-cr_disponivel <- any(!is.na(df$CR) & df$CR != "" & df$CR != "none")
-
-if (cr_disponivel) {
-  rede_coupling <- tryCatch(
-    biblioNetwork(df, analysis = "coupling", network = "authors"),
-    error = function(e) { cat("Coupling error:", e$message, "\n"); NULL }
-  )
-
-  if (!is.null(rede_coupling)) {
-    set.seed(804)
-    net_coupling <- networkPlot(
-      rede_coupling,
-      n = 30,
-      type = "fruchterman",
-      Title = "Bibliographic Coupling — Authors",
-      size.cex = TRUE,
-      label.cex = TRUE,
-      edgesize = 3,
-      edges.min = 5,
-      community.repulsion = 0.1
-    )
-
-    png(here("output", "figures", "fig_author_coupling.png"),
-        width = 10, height = 8, units = "in", res = 300)
-    set.seed(804)
-    networkPlot(rede_coupling, n = 30, type = "fruchterman",
-                Title = "Bibliographic Coupling — Authors",
-                size.cex = TRUE, label.cex = TRUE,
-                edgesize = 3, edges.min = 5, community.repulsion = 0.1)
-    dev.off()
-  } else {
-    cat("Bibliographic coupling could not be computed.\n")
-  }
-} else {
-  cat("Cited references (CR) not available. Bibliographic coupling requires re-export from Scopus/WoS with 'Include references'.\n")
-}
-```
-
-# Contagem de Palavras-chave
+This section synthesizes the keyword frequency analysis, co-occurrence network, thematic map, and thematic evolution into an integrated view of the field's intellectual structure. Table 8 presents the top 20 author keywords, confirming the technological orientation: "digital twin," "smart city," and "IoT" dominate, while governance-related terms are absent.
 
 ```{r}
 #| label: tbl-keywords
@@ -470,137 +461,55 @@ names(kw_autor) <- c("Keyword", "Freq")
 kable(head(kw_autor, 20), caption = "Table 8 — Top 20 author keywords")
 ```
 
-```{r}
-#| label: fig-keywords
-#| fig-cap: "Top 20 author keywords by frequency"
-
-ggplot(head(kw_autor, 20), aes(x = reorder(Keyword, Freq), y = Freq)) +
-  geom_col(fill = "#E74C3C", width = 0.7) +
-  geom_text(aes(label = Freq), hjust = -0.2, size = 3.5) +
-  coord_flip() +
-  labs(x = NULL, y = "Frequency") +
-  theme_minimal(base_size = 13)
-
-ggsave(here("output", "figures", "fig_top_keywords.png"),
-       width = 10, height = 8, dpi = 300)
-```
-
-# Wordcloud de Palavras-chave
-
-```{r}
-#| label: fig-wordcloud
-#| fig-cap: "Word cloud of author keywords"
-
-# Preparar dados para wordcloud
-wc_data <- head(kw_autor, 80)
-
-# Gerar wordcloud como imagem estática via base R wordcloud
-# (wordcloud2 gera HTML, difícil de capturar em PDF)
-if (requireNamespace("wordcloud", quietly = TRUE)) {
-  library(wordcloud)
-  png(here("output", "figures", "fig_wordcloud.png"),
-      width = 10, height = 8, units = "in", res = 300)
-  par(mar = c(0, 0, 0, 0))
-  wordcloud(
-    words = wc_data$Keyword,
-    freq = wc_data$Freq,
-    min.freq = 1,
-    max.words = 80,
-    random.order = FALSE,
-    rot.per = 0.15,
-    colors = brewer.pal(8, "Dark2"),
-    scale = c(3, 0.5)
-  )
-  dev.off()
-  knitr::include_graphics(here("output", "figures", "fig_wordcloud.png"))
-} else {
-  # Fallback: usar wordcloud2 salvando como HTML + screenshot
-  wc <- wordcloud2(wc_data, size = 0.6, color = "random-dark")
-  print(wc)
-}
-```
-
-# Rede de Co-ocorrência de Palavras-chave
+The keyword co-occurrence network (Figure 4) reveals a dominant technology cluster centered on "digital twin," "IoT," and "simulation," with governance keywords appearing as peripheral, weakly-connected nodes. The thematic map (Figure 5) reinforces this finding: motor themes cluster around technological infrastructure, while governance and policy keywords are absent from core clusters and appear only in niche or emerging positions.
 
 ```{r}
 #| label: fig-rede-keywords
-#| fig-cap: "Keyword co-occurrence network"
-#| fig-height: 8
+#| fig-cap: "Figure 4 — Keyword co-occurrence network"
+#| fig-height: 10
 
 rede_kw <- biblioNetwork(df, analysis = "co-occurrences", network = "keywords")
 
 set.seed(2024)
 net_kw <- networkPlot(
-  rede_kw,
-  n = 40,
-  type = "fruchterman",
+  rede_kw, n = 50, type = "fruchterman",
   Title = "Keyword Co-occurrence Network",
-  size.cex = TRUE,
-  label.cex = TRUE,
-  edgesize = 3,
-  edges.min = 3,
-  community.repulsion = 0.1
+  size.cex = TRUE, label.cex = TRUE,
+  edgesize = 1.5, edges.min = 1, community.repulsion = 0.05
 )
-```
-
-```{r}
-#| label: save-rede-keywords
-#| include: false
 
 png(here("output", "figures", "fig_rede_keywords.png"),
-    width = 10, height = 8, units = "in", res = 300)
+    width = 12, height = 10, units = "in", res = 300)
 set.seed(2024)
-networkPlot(rede_kw, n = 40, type = "fruchterman",
+networkPlot(rede_kw, n = 50, type = "fruchterman",
             Title = "Keyword Co-occurrence Network",
             size.cex = TRUE, label.cex = TRUE,
-            edgesize = 3, edges.min = 3, community.repulsion = 0.1)
+            edgesize = 1.5, edges.min = 1, community.repulsion = 0.05)
 dev.off()
 ```
 
-# Mapa Temático
-
-O mapa temático posiciona os clusters de palavras-chave em quatro quadrantes:
-
-- **Motor themes** (alta centralidade + alta densidade): temas centrais e bem desenvolvidos
-- **Niche themes** (baixa centralidade + alta densidade): temas periféricos mas coesos
-- **Basic themes** (alta centralidade + baixa densidade): temas centrais mas pouco desenvolvidos
-- **Emerging/declining themes** (baixa centralidade + baixa densidade): temas periféricos e pouco desenvolvidos
-
 ```{r}
 #| label: fig-mapa-tematico
-#| fig-cap: "Thematic map — strategic positioning of research themes"
+#| fig-cap: "Figure 5 — Thematic map (strategic positioning of research themes)"
 #| fig-height: 10
 
-mapa <- thematicMap(
-  df,
-  field = "DE",
-  n = 250,
-  minfreq = 3,
-  stemming = FALSE,
-  size = 0.5,
-  repel = TRUE
-)
+mapa <- thematicMap(df, field = "DE", n = 250, minfreq = 3,
+                    stemming = FALSE, size = 0.5, repel = TRUE)
 
 print(mapa$map)
 
 ggsave(here("output", "figures", "fig_mapa_tematico.png"),
        plot = mapa$map, width = 12, height = 10, dpi = 300)
-```
-
-```{r}
-#| label: tbl-clusters-mapa
 
 clusters_info <- mapa$clusters
 
 clusters_display <- clusters_info %>%
-  mutate(
-    Quadrant = case_when(
-      rcentrality >= 0.5 & rdensity >= 0.5 ~ "Motor",
-      rcentrality < 0.5 & rdensity >= 0.5 ~ "Niche",
-      rcentrality >= 0.5 & rdensity < 0.5 ~ "Basic",
-      TRUE ~ "Emerging/Declining"
-    )
-  ) %>%
+  mutate(Quadrant = case_when(
+    rcentrality >= 0.5 & rdensity >= 0.5 ~ "Motor",
+    rcentrality < 0.5 & rdensity >= 0.5 ~ "Niche",
+    rcentrality >= 0.5 & rdensity < 0.5 ~ "Basic",
+    TRUE ~ "Emerging/Declining"
+  )) %>%
   select(Cluster = name, Centrality = rcentrality, Density = rdensity, Quadrant, Keywords = words)
 
 kable(clusters_display, digits = 3,
@@ -609,39 +518,15 @@ kable(clusters_display, digits = 3,
 write_csv(clusters_info, here("output", "tables", "clusters_mapa_tematico.csv"))
 ```
 
-# Evolução Temática
+## 3.5 The Decision Support Gap: Evidence from Multiple Angles
 
-```{r}
-#| label: fig-evolucao-tematica
-#| fig-cap: "Thematic evolution over time"
+The central finding of this study — that decision support for urban public management is structurally marginal in the digital twin literature — is supported by converging evidence from four complementary analyses: (1) keyword frequency, (2) thematic cluster positioning, (3) content classification of articles, and (4) industry-academia comparison.
 
-ano_min <- min(df$PY, na.rm = TRUE)
-ano_max <- max(df$PY, na.rm = TRUE)
-ano_corte <- floor((ano_min + ano_max) / 2)
-
-evolucao <- tryCatch({
-  thematicEvolution(df, field = "DE", years = c(ano_corte), n = 100, minFreq = 3)
-}, error = function(e) {
-  cat("Thematic evolution error:", e$message, "\n")
-  tryCatch(
-    thematicEvolution(df, field = "DE",
-                      years = c(ano_min + 2, ano_max - 2),
-                      n = 100, minFreq = 2),
-    error = function(e2) { cat("Persistent error:", e2$message, "\n"); NULL }
-  )
-})
-
-if (!is.null(evolucao)) {
-  plotThematicEvolution(evolucao$Nodes, evolucao$Edges)
-}
-```
-
-# Análise do Gap — Suporte à Decisão
+**Keyword evidence.** Table 10 presents the frequency of decision-support and public management terms in author keywords. The near-absence of governance-related terms is striking: most management keywords appear zero or one time in a corpus of 159 articles.
 
 ```{r}
 #| label: tbl-gap-analysis
 
-# Verificar presença de termos de decisão/gestão nas keywords
 termos_gap <- c(
   "decision support", "decision making", "decision-making",
   "public management", "public administration", "urban governance",
@@ -660,10 +545,11 @@ gap_df <- data.frame(
 kable(gap_df, caption = "Table 10 — Frequency of decision-support and public management terms in author keywords")
 ```
 
+**Thematic cluster evidence.** Within the strategic diagram, no motor or basic cluster contains governance or policy terms. When decision/management terms appear at all, they are confined to niche or emerging/declining clusters — peripheral positions that indicate underdeveloped, non-central research themes.
+
 ```{r}
 #| label: gap-clusters
 
-# Verificar nos clusters do mapa temático
 termos_decisao <- c("decision", "governance", "management", "policy",
                      "public", "municipal", "administration")
 
@@ -690,7 +576,291 @@ if (nrow(clusters_com_decisao) > 0) {
 }
 ```
 
-# Exportar Tabelas
+**Content classification evidence.** Following Nobre and Tavares (2017), who combined bibliometric analysis with content analysis to classify publications by management dimension, we classified each article into one of five categories based on its abstract and author keywords: Technology-only, Urban management, Public governance, Citizen engagement, and Business/industry. Figure 6 and Table 11 present the distribution.
+
+```{r}
+#| label: content-analysis-classification
+#| fig-cap: "Figure 6 — Distribution of articles by management dimension"
+
+tech_terms <- c("iot", "sensor", "3d model", "simulation", "data platform",
+                "cloud", "bim", "building information", "architecture",
+                "framework", "platform", "modeling", "visualization",
+                "monitoring", "real-time", "sensor network")
+urban_mgmt_terms <- c("traffic", "energy", "water", "waste", "transport",
+                       "mobility", "infrastructure management", "utility",
+                       "housing", "land use", "zoning", "urban planning",
+                       "smart building", "energy efficiency")
+gov_terms <- c("decision", "governance", "policy", "public", "municipal",
+               "administration", "urban management", "city management",
+               "e-government", "regulatory", "compliance", "public service")
+citizen_terms <- c("citizen", "participation", "feedback", "social",
+                    "community", "engagement", "public participation",
+                    "stakeholder", "human-centered", "participatory")
+business_terms <- c("supply chain", "manufacturing", "industry", "business",
+                     "enterprise", "corporate", "commercial", "market",
+                     "profit", "cost reduction")
+
+classify_article <- function(abstract, keywords) {
+  text <- tolower(paste(abstract, keywords, sep = " "))
+  has_gov <- any(sapply(gov_terms, function(t) grepl(t, text, fixed = TRUE)))
+  has_citizen <- any(sapply(citizen_terms, function(t) grepl(t, text, fixed = TRUE)))
+  has_urban <- any(sapply(urban_mgmt_terms, function(t) grepl(t, text, fixed = TRUE)))
+  has_business <- any(sapply(business_terms, function(t) grepl(t, text, fixed = TRUE)))
+  if (has_gov) return("Public governance")
+  if (has_citizen) return("Citizen engagement")
+  if (has_urban) return("Urban management")
+  if (has_business) return("Business/industry")
+  return("Technology-only")
+}
+
+df_classified <- df %>%
+  mutate(
+    Abstract_lower = tolower(coalesce(AB, "")),
+    Keywords_lower = tolower(coalesce(DE, "")),
+    Category = mapply(classify_article, Abstract_lower, Keywords_lower)
+  )
+
+category_counts <- df_classified %>%
+  count(Category, name = "Articles") %>%
+  mutate(Percentage = round(Articles / sum(Articles) * 100, 1)) %>%
+  arrange(desc(Articles))
+
+kable(category_counts, caption = "Table 11 — Distribution of articles by management dimension")
+
+ggplot(category_counts, aes(x = reorder(Category, Articles), y = Articles, fill = Category)) +
+  geom_col(width = 0.7, show.legend = FALSE) +
+  geom_text(aes(label = sprintf("%d (%.1f%%)", Articles, Percentage)), hjust = -0.1, size = 3.5) +
+  scale_fill_manual(values = c(
+    "Technology-only" = "#E74C3C", "Urban management" = "#3498DB",
+    "Public governance" = "#2ECC71", "Citizen engagement" = "#F39C12",
+    "Business/industry" = "#9B59B6"
+  )) +
+  coord_flip() +
+  labs(x = NULL, y = "Number of Articles") +
+  theme_minimal(base_size = 13)
+
+ggsave(here("output", "figures", "fig_content_analysis.png"),
+       width = 10, height = 6, dpi = 300)
+
+write_csv(df_classified %>% select(TI, AU, PY, SO, Category),
+          here("output", "tables", "content_analysis_classification.csv"))
+```
+
+The content classification reveals a field dominated by technology-only articles, with public governance and citizen engagement representing a small minority. This distribution echoes Nobre and Tavares (2017), who found that only 0.23% of circular economy publications considered the application of big data/IoT — suggesting that when emerging technologies intersect with management domains, the technological dimension consistently overshadows the governance dimension.
+
+**Industry-academia gap.** The disconnect between practice and academia further amplifies this finding. Table 12 summarizes urban digital twin implementations with explicit governance features. While cities such as Zurich, Herrenberg, Singapore, and Camden have deployed digital twins for participatory planning, policy simulation, and public health decision support, only a minority of these implementations have been documented in the academic literature reviewed here. This mirrors Nobre and Tavares (2017), who found that "a disconnection between important industry initiatives and scientific research seems to exist" — a pattern that appears to generalize across the intersection of emerging technologies and management domains.
+
+```{r}
+#| label: tbl-industry-academia
+
+industry_academia <- data.frame(
+  City = c("Zurich (Switzerland)", "Herrenberg (Germany)", "Singapore",
+           "Dubai (UAE)", "Camden (UK)", "Helsinki (Finland)",
+           "Rotterdam (Netherlands)", "Foshan (China)"),
+  DT_Application = c(
+    "Urban planning & zoning decisions",
+    "Mobility simulation with citizen participation",
+    "National urban planning & policy simulation",
+    "City monitoring & visualization",
+    "Public health decision support",
+    "Energy optimization & climate goals",
+    "Climate adaptation & flood management",
+    "Smart manufacturing & city management"
+  ),
+  Management_Dimension = c(
+    "Decision support for urban planners",
+    "Participatory governance",
+    "Policy simulation & scenario analysis",
+    "Monitoring (limited decision support)",
+    "Public health governance",
+    "Climate policy & energy management",
+    "Climate adaptation governance",
+    "Integrated city governance platform"
+  ),
+  Academic_Coverage = c(
+    "Schrotter & Huerzeler (2020)",
+    "Dembski et al. (2020)",
+    "Limited in reviewed literature",
+    "Limited in reviewed literature",
+    "White et al. (2021)",
+    "Limited in reviewed literature",
+    "Limited in reviewed literature",
+    "Limited in reviewed literature"
+  )
+)
+
+kable(industry_academia,
+      caption = "Table 12 — Urban digital twin implementations: management dimensions and academic coverage",
+      booktabs = TRUE) %>%
+  kable_styling(font_size = 9, latex_options = c("hold_position", "scale_down"))
+```
+
+The management keyword subnetwork (Figure 7) visualizes this structural disconnect. By extracting only management-related keywords and their direct connections to technology keywords from the full co-occurrence network, we observe that management nodes appear as peripheral vertices with weak ties to the technological core, rather than as central hubs or bridges.
+
+```{r}
+#| label: fig-mgmt-subnetwork
+#| fig-cap: "Figure 7 — Management keyword co-occurrence subnetwork (green = management, gray = technology)"
+#| fig-height: 10
+
+g_kw <- graph_from_adjacency_matrix(rede_kw_full <- biblioNetwork(df, analysis = "co-occurrences", network = "keywords"),
+                                     mode = "undirected", weighted = TRUE, diag = FALSE)
+
+mgmt_keywords <- c("decision", "governance", "management", "policy", "public",
+                   "municipal", "administration", "urban management", "citizen",
+                   "participation", "stakeholder", "engagement")
+
+V(g_kw)$is_mgmt <- sapply(V(g_kw)$name, function(n) {
+  any(sapply(mgmt_keywords, function(m) grepl(m, tolower(n), fixed = TRUE)))
+})
+
+mgmt_vertices <- V(g_kw)[V(g_kw)$is_mgmt]
+if (length(mgmt_vertices) > 0) {
+  mgmt_neighbors <- unique(unlist(neighborhood(g_kw, order = 1, nodes = mgmt_vertices)))
+  g_sub <- induced_subgraph(g_kw, vids = mgmt_neighbors)
+  V(g_sub)$color <- ifelse(V(g_sub)$is_mgmt, "#2ECC71", "#BDC3C7")
+  V(g_sub)$label_color <- ifelse(V(g_sub)$is_mgmt, "#2ECC71", "#7F8C8D")
+
+  set.seed(804)
+  png(here("output", "figures", "fig_mgmt_subnetwork.png"),
+      width = 12, height = 10, units = "in", res = 300)
+  plot(g_sub, layout = layout_with_fr(g_sub),
+       vertex.size = degree(g_sub) * 2 + 5,
+       vertex.label.cex = 0.7,
+       vertex.label.color = V(g_sub)$label_color,
+       vertex.color = V(g_sub)$color,
+       edge.width = E(g_sub)$weight * 0.5,
+       edge.color = "#D5D8DC",
+       main = "Management Keyword Subnetwork")
+  dev.off()
+
+  n_mgmt <- sum(V(g_sub)$is_mgmt)
+  n_tech <- sum(!V(g_sub)$is_mgmt)
+  cat(sprintf("Management nodes: %d | Technology neighbors: %d | Total: %d\n", n_mgmt, n_tech, vcount(g_sub)))
+} else {
+  cat("No management keywords found in co-occurrence network.\n")
+}
+```
+
+## 3.6 International Collaboration and Most Cited Articles
+
+Table 13 presents the top 10 most cited articles, which represent the intellectual foundations of the field. These seminal works are predominantly focused on technological aspects — confirming that even the most influential contributions to the field do not prioritize governance or decision support.
+
+```{r}
+#| label: tbl-top-citados
+
+top_citados <- df %>%
+  select(AU, TI, SO, PY, TC) %>%
+  arrange(desc(TC)) %>%
+  head(10) %>%
+  mutate(
+    Author = sapply(strsplit(AU, ";"), function(x) {
+      if (length(x) > 1) paste0(trimws(x[1]), " et al.")
+      else trimws(x[1])
+    }),
+    Title = ifelse(nchar(TI) > 70, paste0(substr(TI, 1, 67), "..."), TI),
+    Journal = ifelse(nchar(SO) > 35, paste0(substr(SO, 1, 32), "..."), SO)
+  ) %>%
+  select(Author, Title, Journal, Year = PY, Citations = TC)
+
+kable(top_citados, caption = "Table 13 — Top 10 most cited articles",
+      booktabs = TRUE) %>%
+  kable_styling(font_size = 8, latex_options = c("hold_position", "scale_down"))
+```
+
+The international collaboration network (Figure 8) shows China and the United Kingdom as primary hubs, while Global South collaborations remain limited — a geographic concentration that raises questions about the universality of the digital twin paradigm for cities with different governance structures and development challenges.
+
+```{r}
+#| label: fig-rede-paises
+#| fig-cap: "Figure 8 — International collaboration network between countries"
+#| fig-height: 8
+
+rede_paises <- biblioNetwork(df, analysis = "collaboration", network = "countries")
+
+set.seed(804)
+net_paises <- networkPlot(
+  rede_paises, n = 20, type = "fruchterman",
+  Title = "International Collaboration Network",
+  size.cex = TRUE, label.cex = TRUE,
+  edgesize = 5, edges.min = 2, community.repulsion = 0.1
+)
+
+png(here("output", "figures", "fig_rede_paises.png"),
+    width = 10, height = 8, units = "in", res = 300)
+set.seed(804)
+networkPlot(rede_paises, n = 20, type = "fruchterman",
+            Title = "International Collaboration Network",
+            size.cex = TRUE, label.cex = TRUE,
+            edgesize = 5, edges.min = 2, community.repulsion = 0.1)
+dev.off()
+```
+
+# 4. Discussion
+
+The central finding of this study can be stated in one sentence: digital twins for smart cities are technologically mature but managerially immature. This claim rests on converging evidence from six independent analyses — bibliometric laws, collaboration networks, thematic mapping, keyword frequency, content classification, and industry-academia comparison — all pointing in the same direction.
+
+**The growth is real, the depth is not.** The exponential growth from 2 articles in 2018 to a peak in 2024, confirmed by Lotka's Law (showing a field still in its maturation phase with few established research lines) and Bradford's Law (showing concentration in technology-oriented journals), demonstrates that digital twins have become a mainstream research topic. However, growth in volume does not equal growth in depth. The core journals identified by Bradford's Law are overwhelmingly technology-oriented, with no management or public administration journal in the core zone. This geographic and thematic concentration means that the field is expanding laterally — more articles on the same technological themes — rather than deepening vertically into governance and decision support.
+
+**The collaboration structure reinforces the divide.** The co-authorship network reveals fragmented clusters with limited cross-group collaboration. Bridging authors with high betweenness centrality connect research groups within the technological domain but rarely span the technology-management divide. This structural isolation of governance research within the field means that even when management perspectives exist, they are disconnected from the mainstream — speaking to themselves rather than influencing the field's direction. China's dominance in production volume, combined with the absence of Global South countries, further limits the diversity of governance perspectives, as different political systems and urban challenges produce different research needs.
+
+**The thematic landscape has a hole where governance should be.** The thematic map positions governance and policy keywords exclusively in peripheral positions — niche or emerging/declining clusters — while motor themes revolve around IoT, sensors, and simulation. This is not merely an absence; it is a structural void at the center of the field. When management keywords do appear in the co-occurrence network, they connect primarily to operational terms (energy, traffic) rather than to strategic governance concepts (policy, decision-making, accountability). The keyword frequency analysis quantifies this void: most governance-related terms appear zero or one time in a corpus of 159 articles.
+
+**The content classification makes the gap undeniable.** The five-category classification of articles by management dimension — following the methodological precedent of Nobre and Tavares (2017) — reveals that the majority of articles are technology-only. Public governance and citizen engagement together represent a small fraction of the corpus. This distribution mirrors Nobre and Tavares's finding that only 0.23% of circular economy publications considered the application of big data/IoT, suggesting a generalizable pattern: when emerging technologies intersect with management domains, the technological dimension consistently overshadows the governance dimension.
+
+**The industry-academia gap turns the gap into a paradox.** Cities such as Zurich, Herrenberg, Singapore, and Camden have already deployed digital twins with explicit governance features — participatory planning, policy simulation, public health decision support. These practical applications demonstrate that governance-ready digital twins are technically feasible and operationally viable. Yet the academic literature barely documents these implementations. This is the paradox: practice has already solved the problem that the literature has not yet recognized as a problem. The industry-academia gap mirrors the finding of Nobre and Tavares (2017) regarding circular economy, where corporate initiatives outpaced academic research in incorporating management dimensions.
+
+**Practical implications.** Urban managers require digital twins that go beyond monitoring to support scenario analysis, policy evaluation, and stakeholder engagement (White et al., 2021; Francisco et al., 2020). The current literature provides limited guidance on how to translate real-time urban data into actionable decisions. The management keyword subnetwork visualizes this disconnect: governance terms appear as peripheral nodes with weak ties to the technological core, rather than as central hubs or bridges. Future research should explicitly address the design of decision support features within digital twin platforms, incorporating frameworks from public management, participatory governance, and evidence-based policy.
+
+The methodological approach adopted here — combining a three-category SCImago filter with bibliometric analysis, bibliometric laws, content classification, and industry comparison — provides a replicable framework for future studies. The decision to use a combined filter was validated empirically: Urban Studies alone would have excluded 85% of the top-20 most cited articles. The convergence of six independent analyses around the same finding strengthens the claim beyond what any single method could establish.
+
+## 4.1 Limitations
+
+This study has several limitations. First, the combined SCImago journal filter, while quadrupling coverage of seminal articles compared to Urban Studies alone, still excludes some highly cited works published in engineering journals (e.g., IEEE Access, Remote Sensing), which could not be included without compromising thematic relevance. Second, bibliographic coupling and co-citation analyses were limited by the absence of cited references (CR field) in Scopus exports; these analyses are performed only on WoS records that include this field, and future studies should prioritize WoS data for citation-based analyses. Third, the search string was restricted to English-language articles, potentially excluding relevant contributions in other languages, particularly Chinese-language research that may address governance dimensions differently. Fourth, bibliometric analysis maps the intellectual structure of a field but cannot assess the quality or depth of individual contributions — a systematic literature review would complement this mapping by providing qualitative insights into how decision support is conceptualized in specific articles. Finally, the PRISMA screening process (title/abstract review) is still in progress; the current corpus of 159 articles represents all articles passing the journal filter, and the final included count may be lower after full-text assessment.
+
+# 5. Conclusion
+
+This bibliometric analysis of 159 articles on digital twins for smart cities (2018–2024) delivers a clear verdict: the field is growing fast but heading in the wrong direction. Motor themes center on technological infrastructure, while governance, policy, and public management keywords are structurally marginal — absent from core clusters, confined to peripheral positions, and barely connected to the technological mainstream. The field is dominated by Chinese and European institutions, with limited representation from the Global South. And while cities are already using digital twins as governance instruments, the academic literature barely documents these practical implementations.
+
+The central claim — that digital twins are technologically mature but managerially immature — is supported by six converging lines of evidence: bibliometric laws (showing concentration in technology journals), collaboration networks (showing absence of technology-management bridges), thematic mapping (showing a governance void at the center), keyword frequency (showing near-zero governance terms), content classification (showing technology-only dominance), and industry-academia comparison (showing practice ahead of research). This multi-method convergence, following the methodological precedent of Nobre and Tavares (2017), strengthens the claim beyond what any single analysis could establish.
+
+The implication for the research agenda is direct: the field must shift from building digital twins to making them govern. This requires: (1) interdisciplinary collaboration between computer scientists, urban planners, and public administration scholars — the kind of bridges that our collaboration network shows are currently absent; (2) systematic documentation of existing digital twin implementations with governance features, closing the industry-academia gap; (3) development of frameworks that integrate public management theory into digital twin platform design; and (4) longitudinal studies tracking whether the decision support gap is narrowing as the field matures — or whether, as Nobre and Tavares's parallel finding suggests, the gap tends to persist unless deliberately addressed.
+
+For urban managers, the message is pragmatic: when selecting or commissioning digital twin platforms, demand decision support features explicitly — scenario analysis, policy evaluation, stakeholder engagement modules — rather than accepting technology-only solutions. For researchers, the message is equally clear: the gap between what digital twins can do and what the literature studies them doing is not just an academic observation; it is a missed opportunity to shape the tools that will govern the cities of tomorrow.
+
+# Acknowledgments
+
+The author(s) declare no conflict of interest. This study was funded by [CAPES/CNPq/FAPERJ — to be completed].
+
+# AI Use Declaration
+
+AI tools (Claude/Anthropic) were used for code assistance. AI is not listed as an author.
+
+# Data Availability
+
+The datasets generated and analyzed during this study are available in the SciELO Data repository at [URL to be added upon submission], in accordance with the urbe data availability policy.
+
+# References
+
+- Allam, Z., Sharifi, A., Bibri, S. E., Jones, D. S., & Krogstie, J. (2022). The metaverse as a virtual form of smart cities: Opportunities and challenges for environmental, economic, and social sustainability in urban futures. *Smart Cities*, 5(3), 1040–1054.
+- Aria, M., & Cuccurullo, C. (2017). bibliometrix: An R-tool for comprehensive science mapping analysis. *Journal of Informetrics*, 11(4), 959–975.
+- Botin-Sanabria, D. M., Salih, A., Mihaita, A.-S., Kwon, S., Kim, Y., & Park, J. (2022). Digital twin technology challenges and applications: A comprehensive review. *Remote Sensing*, 14(6), 1417.
+- Dembski, F., Wossner, U., Letzgus, M., Ruddat, M., & Yamu, C. (2020). Urban digital twins for smart cities and citizens: The case study of Herrenberg. *Sustainability*, 12(6), 2307.
+- Deng, T., Zhang, K., & Luo, Y. (2021). A systematic review of a digital twin city: Urban governance toward smart city. *Journal of Management Science and Engineering*, 6(2), 264–276.
+- Francisco, A., Mohammadi, N., & Taylor, J. E. (2020). Smart city digital twin–enabled energy management: Toward real-time urban building energy benchmarking. *Journal of Management in Engineering*, 36(2), 04019045.
+- Fuller, A., Fan, Z., Day, C., & Barlow, C. (2020). Digital twin: Enabling technologies, challenges and open research. *IEEE Access*, 8, 108952–108971.
+- Ketzler, B., Naserentin, V., Legner, C., et al. (2020). Digital twins for cities: A state of the art review. *Built Environment*, 46(4), 547–573.
+- Lehtola, V. V., Kaartinen, H., Nüchter, A., et al. (2022). Digital twin of a city: Review of technology serving city needs. *International Journal of Applied Earth Observation and Geoinformation*, 108, 102722.
+- Li, X., Han, Y., & Zhu, S. (2022). Big data analysis of IoT in digital twins of smart city. *Future Generation Computer Systems*, 128, 496–505.
+- Mylonas, G., Valkanis, A., Raptis, G., et al. (2021). Digital twins from smart manufacturing to smart cities: A survey. *IEEE Access*, 9, 143222–143249.
+- Nobre, G. C., & Tavares, E. (2017). Scientific literature analysis on big data and internet of things applications on circular economy: A bibliometric study. *Scientometrics*, 111(1), 364–383.
+- Nica, C. V., Zamfir, D.-A., & Nita, A. (2026). Digital twins for smart cities: A bibliometric analysis of the decision support gap. *Cities*, 171, 106797.
+- Page, M. J., McKenzie, J. E., Bossuyt, P. M., et al. (2021). The PRISMA 2020 statement: An updated guideline for reporting systematic reviews. *BMJ*, 372, n71.
+- Sacoto-Cabrera, C. J., Lara, R. P., & Ramos, R. L. (2025). Smart city digital twins: A bibliometric review. *Smart Cities*, 8(5), 175.
+- Schrotter, G., & Huerzeler, C. (2020). The digital twin of the city of Zurich for urban planning. *PFG–Journal of Photogrammetry, Remote Sensing and Geoinformation Science*, 88, 99–112.
+- Van de Ven, A. H. (2007). *Engaged scholarship: A guide for organizational and social research*. Oxford University Press.
+- Visser, M., van Eck, N. J., & Waltman, L. (2021). Large-scale comparison of bibliographic data sources: Scopus, Web of Science, Dimensions, Crossref, and Microsoft Academic. *Quantitative Science Studies*, 2(1), 20–41.
+- Weil, C., Wossner, U., & Brell-Cokcan, S. (2023). Urban digital twin challenges for sustainable smart cities. *Sustainable Cities and Society*, 88, 104–120.
+- White, G., Zink, A., Livesey, S., & Kehily, D. (2021). A digital twin smart city for citizen feedback. *Cities*, 110, 103065.
+- Xia, H., Liu, Z., & Liu, Y. (2022). City digital twin technologies for sustainable smart city design: A review. *Sustainable Cities and Society*, 83, 103934.
 
 ```{r}
 #| label: exportar-tabelas

@@ -828,7 +828,7 @@ For urban managers, the message is pragmatic: when selecting or commissioning di
 
 # Acknowledgments
 
-The author(s) declare no conflict of interest. This study was funded by [CAPES/CNPq/FAPERJ — to be completed].
+The author(s) declare no conflict of interest. This study was funded by CAPES.
 
 # AI Use Declaration
 

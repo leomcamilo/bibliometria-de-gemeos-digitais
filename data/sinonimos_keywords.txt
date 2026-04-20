@@ -1,0 +1,34 @@
+digital twins;digital twin;digital shadow;digital shadows;digital model;digital thread;virtual twin;virtual replica;cyber-physical twin;cyber physical twin;gemeo digital;gemeos digitais;gêmeo digital;gêmeos digitais;dt;dts;digital twin (dt);digital twin city;digital twin technology;city digital twin;building digital twin;ai-driven digital twins;digital-twin;city-level digital twins (cdts)
+smart cities;smart city;sustainable smart cities;future cities;climate-neutral cities;circular cities;age-friendly cities
+urban planning;urban;city planning;urban development;urban regeneration;urban logistics;computational urban science;digital transformation in urban planning
+machine learning;deep learning;artificial intelligence;artificial neural network;geometric deep learning;graph neural networks;federated learning
+internet of things;iot;(iot)
+simulation;modeling;modelling;3d modeling;3d visualization;agent-based model;computational modelling;emission modeling;energy modeling;fuel consumption modeling;collaborative modeling platforms
+decision support;decision making;decision-making;decision support systems;decision support system;decision support platform (dsp);decision-support tools;financial decision-making;urban decision-making;smart decision;science-based decision making;multi-criteria decision making;mcdm;analytic hierarchy process;prescriptive analytics;predictive analytics
+building information modeling;bim;bim (building information modeling);building information management;building information modelling;bim-lca integration
+real-time monitoring;real-time;monitoring
+traffic management;intelligent transportation systems;advanced traffic management systems;traffic congestion;autonomous vehicles;eco-routing;ev;electric vehicles
+energy;energy transition;energy management;renewable energy;building energy;bioelectricity;smart water management
+sustainability;sustainable development;sustainable city;circular economy;circular;cradle to cradle;decarbonisation;decarbonization;carbon neutrality;carbon neutral
+resilience;urban resilience;community resilience;critical infrastructure resilience;climate resilience;adaptation;climate adaptation;climate adaptations
+data;big data;big-data;data analysis;data integration;data quality;data modeling;data-driven;data-driven approaches;data-driven urban development;data spaces
+gis;geographic information system;geographic information systems;3d gis;geospatial analysis;geospatial framework;geospatial technologies;geospatial localization;geospatial dashboard;citygml;cim;city information model;city information modeling;common data environment (cde)
+climate;climate change;climate risk;climate action;climate shelters;climate risk assessment;climate-neutral;climate-neutral cities;environmental and climate adaptation;urban climate
+disaster management;emergency;emergency response;flood;flood risk;flood risk management;flood assessment;flood impact;3d inundation mapping;coastal flooding;flood spreading model (rfsm);smart flood management
+citizen participation;citizen engagement;stakeholder engagement;participatory planning;community engagement;citizen science;citizen sensor network;crowdsourcing platform;co-creation;co-design;co-evaluation;democratizing;participatory governance
+infrastructure;critical infrastructure;infrastructure management;built environment;buildings;construction;construction industry
+governance;urban governance;adaptive governance;data governance;digital governance;civic technology;climate governance;heritage governance;smart governance;social governance;water governance;governance assessment;(iot) governance;open government
+optimization;evolutionary optimization;construction-phase optimization
+visualization;augmented reality;3d visualization
+metaverse;virtual environment
+6g;5g;6g mobile communication
+knowledge;knowledge graph;ontology
+lifecycle;life cycle assessment;building stock model;embodied carbon assessment;embodied cognition
+urban modeling;3d city model;3d data;3d lidar
+planning;geodesign
+technology;emerging technologies;blockchain technology;digital technologies;digital technology
+systems;complex adaptive systems (cas);cyber-physical system;distribution systems;federated database systems
+framework;bani framework
+assessment;flood risk assessment;climate risk assessment
+management;city management;urban management;facility management;asset management;waste management;parking management;sustainable urban management;lifecycle management;city logistics
+policy;public administration;policy-making;urban policy;mobility policy;green policy metrics;humanistic policy;public management

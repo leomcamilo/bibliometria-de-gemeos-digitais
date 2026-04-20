@@ -1,0 +1,706 @@
+"Keyword","Freq"
+"digital twin",68
+"smart city",27
+"digital twins",22
+"smart cities",19
+"urban planning",16
+"sustainability",13
+"urban digital twin",12
+"machine learning",9
+"urban",8
+"urban digital twins",8
+"artificial intelligence",6
+"metaverse",6
+"simulation",6
+"urban management",6
+"data",5
+"decision support",5
+"sustainable development",5
+"urban governance",5
+"analysis",4
+"built environment",4
+"circular economy",4
+"cities",4
+"citizen participation",4
+"internet of things",4
+"internet of things (iot)",4
+"iot",4
+"planning",4
+"architecture",3
+"artificial",3
+"bibliometric analysis",3
+"citizen engagement",3
+"city logistics",3
+"cultural heritage",3
+"decision-making",3
+"deep learning",3
+"digital twin (dt)",3
+"digitalization",3
+"disaster management",3
+"energy transition",3
+"federated learning",3
+"gis",3
+"infrastructure",3
+"life cycle assessment",3
+"ontology",3
+"participatory planning",3
+"smart",3
+"stakeholder engagement",3
+"urban development",3
+"urban regeneration",3
+"5g",2
+"air quality",2
+"applications",2
+"augmented reality",2
+"autonomous vehicles",2
+"big data",2
+"bim",2
+"blockchain",2
+"campus",2
+"china",2
+"city planning",2
+"climate change",2
+"climate neutrality",2
+"climate risk",2
+"decision support systems",2
+"digital twin city",2
+"digital twin technology",2
+"energy",2
+"geographic information system",2
+"graph neural networks",2
+"human thermal comfort",2
+"infrastructure management",2
+"intelligence",2
+"intelligent transportation systems",2
+"knowledge graph",2
+"learning",2
+"living lab",2
+"machine",2
+"making",2
+"modelling",2
+"open data",2
+"optimization",2
+"outdoor thermal comfort",2
+"predictive analytics",2
+"quality of life",2
+"real-time monitoring",2
+"resilience",2
+"resource",2
+"smart water management",2
+"sustainable city",2
+"sustainable smart cities",2
+"systems",2
+"technology",2
+"traffic congestion",2
+"traffic management",2
+"urban climate",2
+"urban logistics",2
+"urban modeling",2
+"urban resilience",2
+"visualization",2
+"(aoi)",1
+"(iot) governance",1
+"20th century",1
+"3d city model",1
+"3d data",1
+"3d gis",1
+"3d inundation mapping",1
+"3d lidar",1
+"3d modeling",1
+"3d visualization",1
+"6g",1
+"6g mobile communication",1
+"adaptation",1
+"adaptive",1
+"adaptive governance",1
+"adaptive reuse",1
+"advanced traffic management systems",1
+"aerial vehicle (uav)",1
+"age of information",1
+"age-friendly cities",1
+"agent-based model",1
+"ai-driven digital twins",1
+"alignment",1
+"allocation",1
+"analytic hierarchy process",1
+"and operations (aeco)",1
+"and strong",1
+"and urban management it",1
+"application",1
+"application migration",1
+"architectural competition",1
+"artificial neural network",1
+"asset management",1
+"automated insights",1
+"awareness",1
+"bani framework",1
+"based materials",1
+"bayesian best-worst method",1
+"bertopic",1
+"best-worst method",1
+"bibliometrics",1
+"big-data",1
+"bim (building information modeing)",1
+"bim-lca integration",1
+"bioelectricity",1
+"blockchain technology",1
+"blue zones",1
+"blueprint",1
+"bologna",1
+"building demolition",1
+"building digital twin",1
+"building information management",1
+"building information modeling",1
+"building information modeling (bim)",1
+"building information modelling",1
+"building stock model",1
+"buildings",1
+"capacity",1
+"carbon dioxide emissions",1
+"carbon neutrality",1
+"carbon sink landscape design",1
+"carla simulator",1
+"chain adaptability",1
+"chains",1
+"change detection",1
+"cim",1
+"cimate-neutral",1
+"circular",1
+"circular cities",1
+"citizen science",1
+"citizen sensor network",1
+"citizens",1
+"city",1
+"city digital twin",1
+"city information",1
+"city information model",1
+"city information modeling",1
+"city management",1
+"city rivers",1
+"city-level digital twins (cdts)",1
+"citygml",1
+"civic technology",1
+"classification",1
+"climate",1
+"climate action",1
+"climate adaptation",1
+"climate adaptations",1
+"climate governance",1
+"climate resilience",1
+"climate risk assessment",1
+"climate shelters",1
+"climate-neutral cities",1
+"cloud computing",1
+"co-creation",1
+"co-design",1
+"co-evaluation",1
+"coastal flooding",1
+"collaborative modeling platforms",1
+"collaborative platforms",1
+"comfa",1
+"common data environment (cde)",1
+"communication layer",1
+"community",1
+"community engagement",1
+"community resilience",1
+"complex adaptive systems (cas)",1
+"complexity",1
+"computational modelling",1
+"computational urban science",1
+"computer architecture",1
+"conservation",1
+"constrained k-means clustering",1
+"construction",1
+"construction industry",1
+"construction-phase optimization",1
+"control",1
+"convolutional gan",1
+"coupling evaluation",1
+"covid-19",1
+"cradle to cradle",1
+"criteria",1
+"critical",1
+"critical cartography",1
+"critical infrastructure",1
+"critical infrastructure resilience",1
+"crowdsourcing platform",1
+"cultural heritage digitalisation",1
+"cultural heritage-led regeneration",1
+"customer-centric supply",1
+"cyber-physical system",1
+"cybersecurity",1
+"data coordination",1
+"data forecasting",1
+"data governance",1
+"data integration",1
+"data mining for urban building energy",1
+"data model",1
+"data modeling",1
+"data quality",1
+"data requirement (dr)",1
+"data spaces",1
+"data-driven",1
+"data-driven approaches",1
+"data-driven urban development",1
+"debris flow cones",1
+"decarbonisation",1
+"decarbonization",1
+"decision",1
+"decision making",1
+"decision support platform (dsp)",1
+"decision support system",1
+"decision-support tools",1
+"deep text recognition",1
+"delphi technique",1
+"democratizing",1
+"dempster-shafer theory",1
+"densification",1
+"deployment-oriented evaluation",1
+"design",1
+"design science research",1
+"detailed model",1
+"detection",1
+"detection system",1
+"diffusion",1
+"digital",1
+"digital economy",1
+"digital engineering",1
+"digital governance",1
+"digital innovation",1
+"digital model",1
+"digital process twin",1
+"digital technologies",1
+"digital technology",1
+"digital thread",1
+"digital transformation in cities",1
+"digital transformation in urban planning",1
+"digital-twin",1
+"distribution systems",1
+"domain extension (ade)",1
+"driving",1
+"driving forces",1
+"dt",1
+"earth",1
+"earth observation",1
+"eco-routing",1
+"ecosystem services",1
+"edge-to-cloud",1
+"ehealth",1
+"electric vehicles",1
+"embodied carbon assessment",1
+"embodied cognition",1
+"emergency",1
+"emergency response",1
+"emerging markets",1
+"emerging technologies",1
+"emission modeling",1
+"emotional",1
+"emotional geography",1
+"en 15978",1
+"energy modeling",1
+"energy scenarios",1
+"energyplus",1
+"engineering",1
+"engines",1
+"entrepreneurialism",1
+"environment",1
+"environmental",1
+"environmental and climate adaptation",1
+"environmental carrying",1
+"environmental justice",1
+"epanet",1
+"eris",1
+"ethical",1
+"ev",1
+"evaluation",1
+"evolutionary optimization",1
+"facility management",1
+"factory of the future",1
+"failure",1
+"federability",1
+"federated database systems",1
+"financial decision-making",1
+"fl frameworks",1
+"flood",1
+"flood assessment",1
+"flood impact",1
+"flood risk",1
+"flood risk management",1
+"flood spreading model (rfsm)",1
+"forecasting",1
+"fourth industrial revolution",1
+"framework",1
+"free and open source",1
+"freight",1
+"fuel consumption modeling",1
+"fusion",1
+"future cities",1
+"game",1
+"game engine",1
+"gaming tools",1
+"geoai",1
+"geodesign",1
+"geographic detector",1
+"geographic information (vgi)",1
+"geometric deep learning",1
+"geospatial analysis",1
+"geospatial dashboard",1
+"geospatial framework",1
+"geospatial localization",1
+"geospatial technologies",1
+"geospatial technology",1
+"giscience",1
+"global",1
+"gothenburg",1
+"governance assessment",1
+"greece",1
+"green cells",1
+"green infrastructures",1
+"green policy metrics",1
+"greenhouse gas",1
+"greenline",1
+"gtwr model",1
+"heat waves",1
+"heritage governance",1
+"hierarchical",1
+"high-altitude mountainous areas",1
+"highway system",1
+"hpc simulations",1
+"human dynamics",1
+"humanistic policy",1
+"hybrid methods",1
+"hydrogeological risk assessment",1
+"hydrological data",1
+"ict infrastructure",1
+"imaginaries",1
+"industrial areas",1
+"industrial facilities",1
+"industry 5.0",1
+"infrared thermography",1
+"innovation and infrastructure",1
+"institutions",1
+"integrated spatio-temporal data center",1
+"integrated urban development",1
+"integration",1
+"intelligence (ai)",1
+"intelligent transportation",1
+"interactive visualization",1
+"internet of everything (ioe)",1
+"interoperability",1
+"intrusion",1
+"inverse reinforcement learning (irl)",1
+"iot in logistics",1
+"iot sensors",1
+"island",1
+"joint lab",1
+"justice",1
+"knowledge graphs",1
+"land use",1
+"land value",1
+"landscape digital twin",1
+"landslide",1
+"last-mile delivery",1
+"lda model",1
+"leakage detection",1
+"lifecycle management",1
+"lighting",1
+"literature review",1
+"living",1
+"llms",1
+"local digital twin",1
+"logistics",1
+"logistics development",1
+"logistics networks",1
+"macau",1
+"management",1
+"mars",1
+"mcdm",1
+"metaverse applications",1
+"microbes",1
+"microclimate",1
+"microclimate analysis",1
+"microspatial inequities",1
+"military",1
+"mobility policy",1
+"model",1
+"model development",1
+"model-based",1
+"modeling (cim)",1
+"modelling and simulation",1
+"monitoring",1
+"multi-criteria decision making",1
+"multi-echelon and multi-modal",1
+"multi-hazard assessment",1
+"multi-objective optimisation",1
+"multimodal analysis",1
+"multimodal transformers",1
+"multimodal travel",1
+"multiple",1
+"multisensory integration",1
+"munich",1
+"nanostores",1
+"natural hazard",1
+"natural hazards",1
+"nature-based solution",1
+"nature-based solutions",1
+"negotiating tradeoffs",1
+"net zero",1
+"network",1
+"neural networks",1
+"new materialism",1
+"new zealand",1
+"nlp",1
+"noise",1
+"nusantara",1
+"nusantara capital city",1
+"object",1
+"oblique photography",1
+"on -demand logistics",1
+"ontological analysis",1
+"open government",1
+"open source",1
+"orientation (svo)",1
+"outdoor heat exposure",1
+"park information modeling (pim)",1
+"parking management",1
+"participation",1
+"participatory governance",1
+"participatory mapping",1
+"participatory processes",1
+"participatory sensing",1
+"participatory workshop",1
+"particle swarm optimization",1
+"people-centric urban regeneration",1
+"perception",1
+"performance evaluation",1
+"perspective",1
+"philosophy",1
+"physical replica",1
+"placemaking",1
+"planning ethics",1
+"planning operation and maintenance",1
+"planning process",1
+"platform",1
+"pluvial flooding",1
+"policy",1
+"policy-making",1
+"population change",1
+"population density",1
+"positive energy district",1
+"post-conflict recovery",1
+"postgis",1
+"power grids",1
+"power system dynamics",1
+"power system stability",1
+"predictive urban planning",1
+"prescriptive analytics",1
+"project",1
+"property graph",1
+"public administration",1
+"public participation",1
+"public transport",1
+"qgis",1
+"rapid",1
+"ray",1
+"real time",1
+"real-time",1
+"real-time data",1
+"real-time data integration",1
+"real-time perception layer",1
+"real-time systems",1
+"realism",1
+"reality",1
+"reduced inequalities",1
+"regenerative design",1
+"regional economy",1
+"reinforcement learning",1
+"remote sensing",1
+"renewable energy integration",1
+"representation",1
+"requirement (sr)",1
+"residential building stock",1
+"resilience level",1
+"resilience planning",1
+"resilient and inclusive communities",1
+"resilient cities",1
+"resilient systems",1
+"resolution",1
+"reuse",1
+"right to the",1
+"risk",1
+"roads",1
+"rotterdam",1
+"route selection habits",1
+"sandbox urbanism",1
+"scene text recognition",1
+"science-based decision making",1
+"sdg 11",1
+"sdg 13: climate action",1
+"sdgs",1
+"security",1
+"seeing otherwise",1
+"seismic risks",1
+"selection",1
+"semantic 3d city models",1
+"semantic modeling",1
+"semantics",1
+"semantics and",1
+"sensor data",1
+"sensor placement",1
+"sensors",1
+"simulation correction",1
+"simulation fidelity",1
+"simulation-based modeling",1
+"singapore-nanjing eco",1
+"situational",1
+"smart building construction",1
+"smart buildings",1
+"smart cities (scs)",1
+"smart city experimentation",1
+"smart city logistics",1
+"smart city platform",1
+"smart communities",1
+"smart decision",1
+"smart energy",1
+"smart flood management",1
+"smart governance",1
+"smart grid",1
+"smart grids",1
+"smart park",1
+"smart solutions",1
+"smart tehran",1
+"smart urban energy systems",1
+"social governance",1
+"social innovation",1
+"social media analysis",1
+"social planning",1
+"social theory",1
+"social turn in the field of smart cities",1
+"social value",1
+"social vulnerability",1
+"socio-technical",1
+"sociology of innovation",1
+"sociotechnical",1
+"sociotechnical model",1
+"solar energy analysis",1
+"solar radiation sensor",1
+"south",1
+"space syntax",1
+"spatial mismatch",1
+"spatial modeling and simulation",1
+"spatiotemporal vision transformer",1
+"sponge cities",1
+"stakeholder",1
+"stakeholders",1
+"state",1
+"stochastic modelling",1
+"stormwater-resilient urban design",1
+"streams framework",1
+"street sweeping system",1
+"structure theory",1
+"supply",1
+"supply chains",1
+"surface temperature prediction",1
+"sustainable cities",1
+"sustainable construction",1
+"sustainable development goal 11",1
+"sustainable development goals",1
+"sustainable development goals (sdg)",1
+"sustainable development goals (sdgs)",1
+"sustainable population migration index",1
+"sustainable smart circular cities (ssccs)",1
+"sustainable urban development",1
+"sustainable urban management",1
+"sustainable urban planning",1
+"sustainable urban road planning",1
+"swot analysis",1
+"system",1
+"system architecture",1
+"system integration",1
+"system maturity",1
+"systematic literature review",1
+"systems architecting",1
+"systems engineering",1
+"systems of systems",1
+"technological digital innovations for urban planning",1
+"telematics data",1
+"temperature",1
+"terminology",1
+"the world avatar",1
+"thematic knowledge framework",1
+"three-dimensional city model",1
+"tool",1
+"tools and techniques",1
+"topic-modeling",1
+"topsis model",1
+"tourist perception",1
+"town \& city planning",1
+"traffic guidance",1
+"traffic risk",1
+"traffic safety",1
+"twins",1
+"typology",1
+"u-city",1
+"ubem",1
+"uhi",1
+"un",1
+"un sdg 10:",1
+"un sdg 11: sustainable cities and communities",1
+"un sdg 16: peace",1
+"un sdg 17: partnerships for the goals",1
+"un sdg 9: industry",1
+"university",1
+"unmanned",1
+"urban analytics",1
+"urban building energy modeling",1
+"urban complexity",1
+"urban decision-making",1
+"urban digital twins (udts)",1
+"urban dynamics",1
+"urban energy",1
+"urban energy planning",1
+"urban energy transactions",1
+"urban extreme heat",1
+"urban heat",1
+"urban heat islands",1
+"urban information modeling",1
+"urban infrastructure",1
+"urban intelligence",1
+"urban laboratory",1
+"urban living lab (ull)",1
+"urban open data",1
+"urban peripheries",1
+"urban policy",1
+"urban resilience to climate change",1
+"urban revitalization",1
+"urban spatial planning",1
+"urban system",1
+"urban systems",1
+"urban technology",1
+"urbanisation",1
+"urbanism",1
+"virtual",1
+"virtual city",1
+"virtual piloting",1
+"virtual reality",1
+"virtual replica",1
+"virtual worlds",1
+"visualisation",1
+"volunteered",1
+"waste",1
+"waste management",1
+"waste-energy-information nexus",1
+"water",1
+"water distribution systems",1
+"water governance",1
+"water networks",1
+"water quality",1
+"water supply",1
+"water usage prediction",1
+"watershed analysis",1
+"waves",1
+"web maps",1
+"web3",1
+"wicked urban problems",1
+"wrf",1
+"xiong'an new area",1
